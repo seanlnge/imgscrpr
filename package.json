@@ -21,7 +21,7 @@
   },
   "scripts": {
     "start": "node dist/index",
-    "postinstall": "tsc index --outDir dist",
+    "postinstall": "tsc",
     "deploy": "git add . && git commit -m Heroku && git push heroku master"
   },
   "repository": {

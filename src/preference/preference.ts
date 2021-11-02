@@ -8,10 +8,9 @@ const client = new MongoClient(uri, {});
 
 function PREF_INIT(): Preference {
     return [
-        //{ subreddit: "gonewild", upvotes: 0, downvotes: 0, previous_post: undefined },
         { subreddit: "ihaveihaveihavereddit", upvotes: 0, downvotes: 0, previous_post: undefined },
         { subreddit: "comedynecrophilia", upvotes: 0, downvotes: 0, previous_post: undefined },
-        //{ subreddit: "hentai", upvotes: 0, downvotes: 0, previous_post: undefined }
+        { subreddit: "memes", upvotes: 0, downvotes: 0, previous_post: undefined }
     ];
 }
 export type Preference = {

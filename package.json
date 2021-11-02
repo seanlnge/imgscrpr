@@ -19,8 +19,9 @@
     "@types/node": "^16.11.1"
   },
   "scripts": {
-    "start": "tsc index && echo Compiled && node dist/index",
-    "postinstall": "tsc index --outDir dist",
+    "start": "node dist/index",
+    "tsc": "tsc index --outDir dist",
+    "postinstall": "npm run tsc",
     "deploy": "git add . && git commit -m Heroku && git push heroku master"
   },
   "repository": {

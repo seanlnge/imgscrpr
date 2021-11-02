@@ -12,7 +12,8 @@
     "node-fetch": "^3.0.0",
     "node-tesseract-ocr": "^2.2.1",
     "pos": "^0.4.2",
-    "reddit": "^1.2.1"
+    "reddit": "^1.2.1",
+    "typescript": "^4.4.4"
   },
   "engines": { "node": "16.10.0"},
   "devDependencies": {
@@ -20,8 +21,7 @@
   },
   "scripts": {
     "start": "node dist/index",
-    "tsc": "tsc index --outDir dist",
-    "postinstall": "npm run tsc",
+    "postinstall": "tsc index --outDir dist",
     "deploy": "git add . && git commit -m Heroku && git push heroku master"
   },
   "repository": {

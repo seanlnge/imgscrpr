@@ -9,7 +9,6 @@ const client = new MongoClient(uri, {});
 function PREF_INIT(): Preference {
     return [
         { subreddit: "ihaveihaveihavereddit", upvotes: 0, downvotes: 0, previous_post: undefined },
-        { subreddit: "comedynecrophilia", upvotes: 0, downvotes: 0, previous_post: undefined },
         { subreddit: "memes", upvotes: 0, downvotes: 0, previous_post: undefined }
     ];
 }
@@ -46,6 +45,6 @@ export async function insert(server_id: string, data: Preference[0]) {
     await client.db("preferences").collection(server_id).insertOne(data);
 }
 
-export async function update(server_id: string, subreddit: string, data: Preference[0]) {
-    await client.db("preferences").collection(server_id).updateOne({ subreddit }, { $set: data });
+export async function update(server_id: string, data: Preference[0]) {
+    await client.db("preferences").collection(server_id).updateOne({ subreddit: data.subreddit }, { $set: data });
 }

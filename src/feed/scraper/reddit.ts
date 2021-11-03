@@ -19,19 +19,24 @@ export async function get_post(subreddit: string, options: { [key: string]: any 
     let image = reddit_response.data.children.filter((post: any) =>
         (['jpg', 'png', 'gif', 'jpeg', 'webp', 'svg', 'webm'].includes(post.data.url.split(/[\.\/]/g).slice(-1)[0])
         || post.data.media)
-        //&& !post.data.over_18
     )[0];
 
     if(!image) return undefined;
 
     // Extract data from post list
+    let url = image.data.url;
+    if(image.data.is_video) {
+        url = image.data.media.reddit_video.fallback_url;
+        console.log(url);
+        if(!url.split(/[\.\/]/g).slice(-1)[0].includes('mp4')) {
+            url = image.data.thumbnail;
+        }
+    }
     return {
         title: image.data.title,
         subreddit,
         thumbnail_url: image.data.thumbnail,
-        url: image.data.is_video
-            ? image.data.media.reddit_video.fallback_url
-            : image.data.url,
+        url,
         id: image.data.name
     };
 }

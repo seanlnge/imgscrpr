@@ -64,7 +64,7 @@ client.on("messageCreate", async msg => {
         // Collect reactions
         const collector = message.createReactionCollector({
             filter: (reaction, user) => !user.bot && ['🟢', '🔴'].includes(reaction.emoji.name),
-            time: 3600000,
+            time: 1200000,
             dispose: true,
         });
         collector.on('collect', async reaction => {

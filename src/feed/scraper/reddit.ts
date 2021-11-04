@@ -27,9 +27,8 @@ export async function get_post(subreddit: string, options: { [key: string]: any 
     let url = image.data.url;
     if(image.data.is_video) {
         url = image.data.media.reddit_video.fallback_url;
-        console.log(url);
         if(!url.split(/[\.\/]/g).slice(-1)[0].includes('mp4')) {
-            url = image.data.thumbnail;
+            return undefined;
         }
     }
     return {

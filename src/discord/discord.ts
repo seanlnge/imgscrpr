@@ -18,6 +18,7 @@ client.on("messageCreate", async msg => {
     let preference = await Preference.get_server_pref(msg.channel.id);
 
     if(msg.content.slice(0, 4) == "/add") {
+        // Get top subreddit in preference
         let top_sub_name = preference.reduce((a, c) => {
             let score = Math.max(a.score, sr_score(c.subreddit, preference));
             let subreddit = score == a.score ? a.subreddit : c.subreddit;
@@ -26,6 +27,7 @@ client.on("messageCreate", async msg => {
 
         let top_sub = Preference.get_subreddit(top_sub_name.subreddit, preference);
 
+        // Create new subreddit
         let subreddit = {
             subreddit: msg.content.slice(5).trim(),
             upvotes: top_sub.upvotes + 2,
@@ -33,36 +35,33 @@ client.on("messageCreate", async msg => {
             previous_post: undefined
         };
 
-        if(Preference.get_subreddit(msg.content.slice(5), preference)) {
-            await Preference.update(msg.channel.id, subreddit);
-        } else {
-            await Preference.insert(msg.channel.id, subreddit);
-        }
+        preference.push(subreddit);
     }
 
     if(msg.content == "/image") {
         const server: Preference.Preference = await Preference.get_server_pref(msg.channel.id);
         const post: { post: Post, score: number }  = await scrape(server);
 
+        // Create embeded message
         let format_sub = '/r/' + post.post.subreddit;
         const embed = new Discord.MessageEmbed();
         embed.setTitle(format_sub).setURL('https://reddit.com' + format_sub);
         embed.setDescription(post.post.title);
         embed.setImage(post.post.url);
         const message = await msg.channel.send({ embeds: [embed] });
-
+    
         await message.react('🟢');
         await message.react('🔴');
 
+        // Get/create subreddit data in channel preference
         let subreddit = Preference.get_subreddit(post.post.subreddit, server);
         if(!subreddit) {
             subreddit = { subreddit: post.post.subreddit, upvotes: 0, downvotes: 0, previous_post: post.post.id };
             await Preference.insert(msg.channel.id, subreddit);
         }
-
         subreddit.previous_post = post.post.id;
-        await Preference.update(msg.channel.id, subreddit);
         
+        // Collect reactions
         const collector = message.createReactionCollector({
             filter: (reaction, user) => !user.bot && ['🟢', '🔴'].includes(reaction.emoji.name),
             time: 3600000,
@@ -71,17 +70,17 @@ client.on("messageCreate", async msg => {
         collector.on('collect', async reaction => {
             if(reaction.emoji.name == '🟢') subreddit.upvotes++;
             if(reaction.emoji.name == '🔴') subreddit.downvotes++;
-            
-            await Preference.update(msg.channel.id, subreddit);
         });
         collector.on('remove', async reaction => {
             if(reaction.emoji.name == '🟢') subreddit.upvotes--;
             if(reaction.emoji.name == '🔴') subreddit.downvotes--;
-            
-            await Preference.update(msg.channel.id, subreddit);
+        });
+        collector.on("end", async () => {
+            await Preference.update(msg.channel.id, subreddit.subreddit);
         });
     }
 
+    // Reset all subreddit's data
     if(msg.content == "/reset") {
         await Preference.reset(msg.channel.id);
     }

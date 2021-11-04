@@ -19,27 +19,26 @@ export async function scrape(preference: Preference) {
         last: (get_subreddit(sub, preference) || { previous_post: undefined }).previous_post
     })).sort((a, b) => b.score - a.score);
 
-    // Gives a 1:3:5:7:9 ratio
+    // Gives a 9:7:5:3:1 ratio of picking top subs
     let amount = 5;
     let random = Math.floor(Math.random()**2 * amount);
 
     console.log(ranked_subs.slice(0, amount));
 
-    let sub = ranked_subs[random];
-    let post = await get_post(sub.subreddit, { after: sub.last });
+    let post: Post = undefined;
     while(!post) {
+        // Obtain post
         let sub = ranked_subs[random];
         random = (random + 1) % amount;
-        post = await get_post(sub.subreddit, { after: sub.last });
+
+        let post_type = await get_post(sub.subreddit, { after: sub.last });
+
+        // Make sure post is valid
+        if(typeof post_type == "string") {
+            sub.last = post_type as string;
+        } else {
+            post = post_type as Post;
+        }
     }
     return { post, score: ranked_subs[random].score };
-
-    /*// Get top post on hot from each subreddit
-    let post_list: Post[] = [];
-    for(let sub of top_subs) {
-        post_list.push(...await get_post(sub));
-    }
-
-    // Process posts and return
-    //return await process(preference, post_list);*/
 }

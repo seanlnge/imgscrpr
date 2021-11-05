@@ -21,9 +21,9 @@ export async function scrape(preference: Preference) {
 
     // Gives a even ratio for picking top subs
     let amount = 5;
-    let total = ranked_subs.slice(0, amount).reduce((a, c) => a + c.score, 0);
+    let total = ranked_subs.slice(0, amount).reduce((a, c) => a + c.score ** 3, 0);
     let random_float = Math.random() * total;
-    let random = ranked_subs.findIndex(a => 0 > (random_float -= a.score));
+    let random = ranked_subs.findIndex(a => 0 > (random_float -= a.score**3));
 
     let post: Post = undefined;
     while(!post) {

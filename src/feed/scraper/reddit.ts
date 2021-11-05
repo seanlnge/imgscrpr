@@ -61,6 +61,11 @@ export async function get_post(subreddit: string, options: { [key: string]: any 
 
             if(length < 8000000) { console.log(length); break; };
         }
+    } else {
+        // Make sure image hosted on reddit
+        if(url.split('//i.')[0].slice(0, 6) != 'reddit') {
+            return image.data.name;
+        }
     }
 
     // Parse and return

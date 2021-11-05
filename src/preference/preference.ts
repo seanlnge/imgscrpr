@@ -1,6 +1,4 @@
-import Collection from '@discordjs/collection';
-import { channel } from 'diagnostics_channel';
-import { MongoClient, ReadPreferenceMode } from 'mongodb';
+import { MongoClient } from 'mongodb';
 
 require('dotenv').config();
 
@@ -9,14 +7,15 @@ const client = new MongoClient(uri, {});
 
 function PREF_INIT(): Preference {
     return [
-        { subreddit: "ihaveihaveihavereddit", upvotes: 0, downvotes: 0, previous_post: undefined },
-        { subreddit: "memes", upvotes: 0, downvotes: 0, previous_post: undefined }
+        { subreddit: "damnthatsinteresting", score: 0, total: 0, previous_post: undefined },
+        { subreddit: "memes", score: 0, total: 0, previous_post: undefined },
+        { subreddit: "gayspiderbrothel", score: 0, total: 0, previous_post: undefined },
     ];
-}
+} 
 export type Preference = {
     subreddit: string,
-    upvotes: number,
-    downvotes: number,
+    score: number,
+    total: number,
     previous_post: string,
 }[];
 
@@ -26,9 +25,7 @@ export function get_subreddit(subreddit: string, preference: Preference) {
     return preference.find(a => a.subreddit == subreddit);
 }
 
-export async function connect_db() {
-    await client.connect();
-}
+export async function connect_db() { await client.connect() };
 
 export async function get_server_pref(channel_id: string) {
     // Find channel in working preferences

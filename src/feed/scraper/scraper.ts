@@ -9,7 +9,7 @@ export async function scrape(preference: Preference) {
     let subreddits: Set<string> = new Set();
     for(let sub of preference) {
         subreddits.add(sub.subreddit);
-        Object.keys(sr_connections(sub.subreddit)).forEach(a => subreddits.add(a));
+        sr_connections(sub.subreddit).forEach(a => subreddits.add(a));
     }
 
     // Rank subreddits from highest score to lowest score
@@ -23,8 +23,6 @@ export async function scrape(preference: Preference) {
     let amount = 5;
     let random = Math.floor(Math.random()**2 * amount);
 
-    console.log(ranked_subs.slice(0, amount));
-
     let post: Post = undefined;
     while(!post) {
         // Obtain post
@@ -34,10 +32,13 @@ export async function scrape(preference: Preference) {
         let post_type = await get_post(sub.subreddit, { after: sub.last });
 
         // Make sure post is valid
+        if(!post_type) continue;
         if(typeof post_type == "string") {
             sub.last = post_type as string;
+            console.log(post_type);
         } else {
             post = post_type as Post;
+            console.log(post.subreddit, post.url);
         }
     }
     return { post, score: ranked_subs[random].score };

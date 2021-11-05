@@ -4,28 +4,18 @@ import { Preference, get_subreddit } from '../../preference/preference';
 const subreddits = JSON.parse(readFileSync(__dirname + '/../../../../public/subreddits.json', 'utf-8'));
 
 export function sr_connections(subreddit: string) {
-    let data = subreddits[subreddit] || {};
-    delete data.count;
-    return data;
+    return subreddits[subreddit] || [];
 }
 
 export function sr_score(subreddit: string, preference: Preference): number {
     function ud_ratio(subreddit: string) {
         let sub_data = get_subreddit(subreddit, preference);
         if(!sub_data) return 0;
-
-        let upvotes = sub_data.upvotes;
-        let downvotes = sub_data.downvotes;
-
-        return (upvotes - downvotes) / (upvotes + downvotes + 8);
+        
+        return sub_data.score / (sub_data.total + 8);
     }
 
-    let connections = sr_connections(subreddit);
-
-    let connection_score = Object.keys(connections).reduce((acc, cur) => acc
-        + connections[cur] / 100
-        * ud_ratio(cur)
-    , 0);
-
+    // Add to score based on upvoted connections
+    let connection_score = sr_connections(subreddit).reduce((acc, cur) => acc + ud_ratio(cur) * 0.5, 0);
     return ud_ratio(subreddit) + connection_score;
 }

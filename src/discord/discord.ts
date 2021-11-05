@@ -6,13 +6,26 @@ import Post from '../post'
 
 require('dotenv').config();
 
-const client = new Discord.Client({ intents: [Discord.Intents.FLAGS.GUILDS, Discord.Intents.FLAGS.GUILD_MESSAGES, Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS] });
+const Reactions = {
+    '🟢': 1,
+    '🟡': 0.5,
+    '🟠': -0.5,
+    '🔴': -1,
+}
 
-client.on("ready", () => {
-    console.log(`Logged in as ${client.user.tag}!`)
+const Client = new Discord.Client({
+    intents: [
+        Discord.Intents.FLAGS.GUILDS,
+        Discord.Intents.FLAGS.GUILD_MESSAGES,
+        Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS
+    ]
 });
 
-client.on("messageCreate", async msg => {
+Client.on("ready", () => {
+    console.log(`Logged in as ${Client.user.tag}!`)
+});
+
+Client.on("messageCreate", async msg => {
     if(msg.author.bot) return;
 
     let preference = await Preference.get_server_pref(msg.channel.id);
@@ -30,8 +43,8 @@ client.on("messageCreate", async msg => {
         // Create new subreddit
         let subreddit = {
             subreddit: msg.content.slice(5).trim(),
-            upvotes: top_sub.upvotes + 2,
-            downvotes: top_sub.downvotes,
+            score: top_sub.score + 2,
+            total: top_sub.total,
             previous_post: undefined
         };
 
@@ -47,35 +60,55 @@ client.on("messageCreate", async msg => {
         const embed = new Discord.MessageEmbed();
         embed.setTitle(format_sub).setURL('https://reddit.com' + format_sub);
         embed.setDescription(post.post.title);
-        embed.setImage(post.post.url);
-        const message = await msg.channel.send({ embeds: [embed] });
-    
-        await message.react('🟢');
-        await message.react('🔴');
+
+        // Discord doesn't allow for embed videos
+        if(!post.post.video) embed.setImage(post.post.url);
+        const Message = await msg.channel.send({
+            embeds: [embed],
+            files: post.post.video ?
+                [post.post.url] : []
+        });
+        
+        // Send all reactions
+        for(let reaction in Reactions) {
+            await Message.react(reaction);
+        }
 
         // Get/create subreddit data in channel preference
         let subreddit = Preference.get_subreddit(post.post.subreddit, server);
         if(!subreddit) {
-            subreddit = { subreddit: post.post.subreddit, upvotes: 0, downvotes: 0, previous_post: post.post.id };
+            subreddit = { subreddit: post.post.subreddit, score: 0, total: 0, previous_post: post.post.id };
             await Preference.insert(msg.channel.id, subreddit);
         }
         subreddit.previous_post = post.post.id;
         
         // Collect reactions
-        const collector = message.createReactionCollector({
-            filter: (reaction, user) => !user.bot && ['🟢', '🔴'].includes(reaction.emoji.name),
+        const Collector = Message.createReactionCollector({
+            filter: (reaction, user) => !user.bot && reaction.emoji.name in Reactions,
             time: 1200000,
             dispose: true,
         });
-        collector.on('collect', async reaction => {
-            if(reaction.emoji.name == '🟢') subreddit.upvotes++;
-            if(reaction.emoji.name == '🔴') subreddit.downvotes++;
+
+        // On reaction add
+        Collector.on('collect', async reaction => {
+            let score = Reactions[reaction.emoji.name];
+            if(!score) return;
+
+            subreddit.score += score;
+            subreddit.total++;
         });
-        collector.on('remove', async reaction => {
-            if(reaction.emoji.name == '🟢') subreddit.upvotes--;
-            if(reaction.emoji.name == '🔴') subreddit.downvotes--;
+
+        // On reaction remove
+        Collector.on('remove', async reaction => {
+            let score = Reactions[reaction.emoji.name];
+            if(!score) return;
+
+            subreddit.score -= score;
+            subreddit.total--;
         });
-        collector.on("end", async () => {
+
+        // At end of 20 minutes update database
+        Collector.on("end", async () => {
             await Preference.update(msg.channel.id, subreddit.subreddit);
         });
     }
@@ -87,5 +120,5 @@ client.on("messageCreate", async msg => {
 });
 
 export function login() {
-    client.login(process.env.TOKEN);
+    Client.login(process.env.TOKEN);
 }

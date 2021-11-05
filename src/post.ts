@@ -3,5 +3,6 @@ export default interface Post {
     subreddit: string,
     thumbnail_url: string,
     url: string,
+    video: boolean,
     id: string
 }

@@ -19,9 +19,11 @@ export async function scrape(preference: Preference) {
         last: (get_subreddit(sub, preference) || { previous_post: undefined }).previous_post
     })).sort((a, b) => b.score - a.score);
 
-    // Gives a 9:7:5:3:1 ratio of picking top subs
+    // Gives a even ratio for picking top subs
     let amount = 5;
-    let random = Math.floor(Math.random()**2 * amount);
+    let total = ranked_subs.slice(0, amount).reduce((a, c) => a + c.score, 0);
+    let random_float = Math.random() * total;
+    let random = ranked_subs.findIndex(a => 0 > (random_float -= a.score));
 
     let post: Post = undefined;
     while(!post) {

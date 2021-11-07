@@ -1,7 +1,7 @@
 import * as Discord from 'discord.js';
-import { scrape } from '../feed/scraper/scraper';
-import * as Preference from '../preference/preference';
-import { sr_score } from '../feed/processer/subreddits';
+import { scrape } from '../scraper/scraper';
+import * as Preference from '../store/preference';
+import { sr_score } from '../scraper/subreddits';
 import Post from '../post'
 
 require('dotenv').config();

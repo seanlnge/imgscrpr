@@ -1,6 +1,6 @@
 import * as Reddit from 'reddit';
 import * as Axios from 'axios';
-import Post from '../../post';
+import Post from '../post';
 
 require('dotenv').config();
 
@@ -72,7 +72,6 @@ export async function get_post(subreddit: string, options: { [key: string]: any 
     return {
         title: image.data.title,
         subreddit,
-        thumbnail_url: image.data.thumbnail,
         url,
         video: image.data.is_video,
         id: image.data.name

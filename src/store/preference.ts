@@ -25,8 +25,6 @@ export function get_subreddit(subreddit: string, preference: Preference) {
     return preference.find(a => a.subreddit == subreddit);
 }
 
-export async function connect_db() { await client.connect() };
-
 export async function get_server_pref(channel_id: string) {
     // Find channel in working preferences
     if(channel_id in WorkingPreferences) {
@@ -71,3 +69,5 @@ export async function update(channel_id: string, subreddit: string) {
     const sub = get_subreddit(subreddit, pref);
     await client.db("preferences").collection(channel_id).updateOne({ subreddit }, { $set: sub });
 }
+
+export async function connect_db() { await client.connect() };

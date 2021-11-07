@@ -1,5 +1,5 @@
 import { readFileSync } from 'fs';
-import { Preference, get_subreddit } from '../../preference/preference';
+import { Preference, get_subreddit } from '../store/preference';
 
 const subreddits = JSON.parse(readFileSync(__dirname + '/../../../../public/subreddits.json', 'utf-8'));
 

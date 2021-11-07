@@ -1,8 +1,8 @@
-import { get_post } from './reddit';
-import { process } from '../processer/processer';
-import Post from '../../post';
-import { Preference, get_subreddit } from '../../preference/preference';
-import { sr_score, sr_connections } from '../processer/subreddits';
+import * as Reddit from './reddit';
+import Post from '../post';
+import * as Cache from '../store/cache';
+import { Preference, get_subreddit } from '../store/preference';
+import { sr_score, sr_connections } from './subreddits';
 
 export async function scrape(preference: Preference) {
     // Sort all subreddits in preference database
@@ -31,16 +31,23 @@ export async function scrape(preference: Preference) {
         let sub = ranked_subs[random];
         random = (random + 1) % amount;
 
-        let post_type = await get_post(sub.subreddit, { after: sub.last });
+        // Check for post in cache
+        let cached_post = Cache.get_post(sub.subreddit, sub.last);
+        if(cached_post) {
+            post = cached_post; 
+            break;  
+        }
+
+        // Fallback to reddit post
+        let post_type = await Reddit.get_post(sub.subreddit, { after: sub.last });
 
         // Make sure post is valid
         if(!post_type) continue;
         if(typeof post_type == "string") {
             sub.last = post_type as string;
-            console.log(post_type);
         } else {
             post = post_type as Post;
-            console.log(post.subreddit, post.url);
+            Cache.add_post(sub.subreddit, post);
         }
     }
     return { post, score: ranked_subs[random].score };

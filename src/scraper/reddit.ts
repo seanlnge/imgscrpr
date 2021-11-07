@@ -59,7 +59,7 @@ export async function get_post(subreddit: string, options: { [key: string]: any 
             ).catch(() => 0);
             if(!length) continue;
 
-            if(length < 8000000) { console.log(length); break; };
+            if(length < 8000000) break;
         }
     } else {
         // Make sure image hosted on reddit

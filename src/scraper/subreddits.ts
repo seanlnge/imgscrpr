@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { Preference, get_subreddit } from '../store/preference';
 
-const subreddits = JSON.parse(readFileSync(__dirname + '/../../../../public/subreddits.json', 'utf-8'));
+const subreddits = JSON.parse(readFileSync(__dirname + '/../../../public/subreddits.json', 'utf-8'));
 
 export function sr_connections(subreddit: string) {
     return subreddits[subreddit] || [];

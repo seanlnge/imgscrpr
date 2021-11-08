@@ -50,6 +50,9 @@ Client.on("messageCreate", async msg => {
 
         preference.push(subreddit);
     }
+    if(msg.content.slice(0, 7) == '/remove') {
+        delete preference[msg.content.slice(7).trim()];
+    }
 
     if(msg.content == "/image") {
         const server: Preference.Preference = await Preference.get_server_pref(msg.channel.id);

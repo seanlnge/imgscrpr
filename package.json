@@ -4,6 +4,8 @@
   "description": "Adaptive discord bot for a channel-wide image feed",
   "main": "index.js",
   "dependencies": {
+    "@discordjs/builders": "^0.8.2",
+    "@discordjs/rest": "0.1.0-canary.0",
     "axios": "^0.24.0",
     "canvas": "^2.8.0",
     "discord.js": "^13.2.0",

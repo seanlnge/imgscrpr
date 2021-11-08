@@ -4,4 +4,5 @@
         "moduleResolution": "node",
         "outDir": "dist"
     },
+    "include": ["src", "index.ts"]
   }

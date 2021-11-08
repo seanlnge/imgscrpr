@@ -41,10 +41,6 @@ export async function get_post(subreddit: string, options: { [key: string]: any 
         }
 
         // Check that video length is discord-send-able
-        const length = await axios.head(url).then(res =>
-            parseInt(res.headers['content-length'])
-        );
-
         for(let size of ['1080', '480', '360', '240', 'end']) {
             if(size == 'end') return image.data.name;
 
@@ -66,6 +62,11 @@ export async function get_post(subreddit: string, options: { [key: string]: any 
         if(url.split('//i.')[0].slice(0, 6) != 'reddit') {
             return image.data.name;
         }
+
+        const length = await axios.head(url).then(res =>
+            parseInt(res.headers['content-length'])
+        );
+        if(length > 8000000) return image.data.name;
     }
 
     // Parse and return

@@ -5,6 +5,7 @@ import { Preference, get_subreddit } from '../store/preference';
 import { sr_score, sr_connections } from './subreddits';
 
 export async function scrape(preference: Preference) {
+    console.log("request received");
     // Sort all subreddits in preference database
     let subreddits: Set<string> = new Set();
     for(let sub of preference) {
@@ -15,7 +16,7 @@ export async function scrape(preference: Preference) {
     // Rank subreddits from highest score to lowest score
     let ranked_subs = Array.from(subreddits).map((sub: string) =>({
         subreddit: sub,
-        score: Math.cbrt(sr_score(sub, preference)) + Math.random() / 10,
+        score: sr_score(sub, preference) + Math.random() / 10,
         last: (get_subreddit(sub, preference) || { previous_post: undefined }).previous_post
     })).sort((a, b) => b.score - a.score);
 
@@ -29,6 +30,7 @@ export async function scrape(preference: Preference) {
     while(!post) {
         // Obtain post
         let sub = ranked_subs[random];
+        console.log("looking through " + sub.subreddit);
         random = (random + 1) % amount;
 
         // Check for post in cache
@@ -37,6 +39,7 @@ export async function scrape(preference: Preference) {
             post = cached_post; 
             break;  
         }
+        console.log("fetching reddit post");
 
         // Fallback to reddit post
         let post_type = await Reddit.get_post(sub.subreddit, { after: sub.last });

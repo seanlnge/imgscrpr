@@ -5,7 +5,6 @@ import { Preference, get_subreddit } from '../database/preference';
 import { sr_score, sr_connections } from './subreddits';
 
 export async function scrape(preference: Preference) {
-    console.log("request received");
     // Sort all subreddits in preference database
     let subreddits: Set<string> = new Set();
     for(let sub of preference) {
@@ -20,17 +19,16 @@ export async function scrape(preference: Preference) {
         last: (get_subreddit(sub, preference) || { previous_post: undefined }).previous_post
     })).sort((a, b) => b.score - a.score);
 
-    // Gives a even ratio for picking top subs
+    // Gives a weighted ratio for picking top subs
     let amount = 5;
-    let total = ranked_subs.slice(0, amount).reduce((a, c) => a + c.score ** 3, 0);
+    let total = ranked_subs.slice(0, amount).reduce((a, c) => a + c.score, 0);
     let random_float = Math.random() * total;
-    let random = ranked_subs.findIndex(a => 0 > (random_float -= a.score**3));
+    let random = ranked_subs.findIndex(a => 0 > (random_float -= a.score));
 
     let post: Post = undefined;
     while(!post) {
         // Obtain post
         let sub = ranked_subs[random];
-        console.log("looking through " + sub.subreddit);
         random = (random + 1) % amount;
 
         // Check for post in cache
@@ -39,19 +37,21 @@ export async function scrape(preference: Preference) {
             post = cached_post; 
             break;  
         }
-        console.log("fetching reddit post");
 
         // Fallback to reddit post
         let post_type = await Reddit.get_post(sub.subreddit, { after: sub.last });
 
-        // Make sure post is valid
+        // Handle errors if post invalid
         if(!post_type) continue;
         if(typeof post_type == "string") {
             sub.last = post_type as string;
-        } else {
-            post = post_type as Post;
-            Cache.add_post(sub.subreddit, post);
+            continue;
         }
+
+        // Cache and edit preference
+        post = post_type as Post;
+        Cache.add_post(sub.subreddit, post);
     }
+
     return { post, score: ranked_subs[random].score };
 }

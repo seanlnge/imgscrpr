@@ -4,5 +4,6 @@
 **A - E** - Urgency
 ***
 * 5D Setup website
-* 2A Turn into proper commands
+* 1A Turn into proper commands
 * 5B Store channel preferences
+* 3A Clear unneeded subreddit suggestions from preference

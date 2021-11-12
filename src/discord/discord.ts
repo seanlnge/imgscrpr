@@ -56,20 +56,20 @@ Client.on("messageCreate", async msg => {
 
     if(msg.content == "/image") {
         const server: Preference.Preference = await Preference.get_server_pref(msg.channel.id);
-        const post: { post: Post, score: number }  = await scrape(server);
+        const data: { post: Post, score: number }  = await scrape(server);
 
         // Create embeded message
-        let format_sub = '/r/' + post.post.subreddit;
+        let format_sub = '/r/' + data.post.subreddit;
         const embed = new Discord.MessageEmbed();
         embed.setTitle(format_sub).setURL('https://reddit.com' + format_sub);
-        embed.setDescription(post.post.title);
+        embed.setDescription(data.post.title);
 
         // Discord doesn't allow for embed videos
-        if(!post.post.video) embed.setImage(post.post.url);
+        if(!data.post.video) embed.setImage(data.post.url);
         const Message = await msg.channel.send({
             embeds: [embed],
-            files: post.post.video ?
-                [post.post.url] : []
+            files: data.post.video ?
+                [data.post.url] : []
         });
         
         // Send all reactions
@@ -78,12 +78,13 @@ Client.on("messageCreate", async msg => {
         }
 
         // Get/create subreddit data in channel preference
-        let subreddit = Preference.get_subreddit(post.post.subreddit, server);
+        let subreddit = Preference.get_subreddit(data.post.subreddit, server);
         if(!subreddit) {
-            subreddit = { subreddit: post.post.subreddit, score: 0, total: 0, previous_post: post.post.id };
+            subreddit = { subreddit: data.post.subreddit, score: 0, total: 0, previous_post: data.post.id };
             await Preference.insert(msg.channel.id, subreddit);
+        } else {
+            subreddit.previous_post = data.post.id;
         }
-        subreddit.previous_post = post.post.id;
         
         // Collect reactions
         const Collector = Message.createReactionCollector({

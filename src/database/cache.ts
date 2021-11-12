@@ -8,6 +8,8 @@ export function get_post(subreddit: string, after: string): Post {
     // Compare post ids
     let time = parseInt(after.slice(3), 36);
     let post = CachedPosts[subreddit].find(post => time < parseInt(post.id.slice(3), 36));
+
+    if(post) console.log(after, post.id);
     return post;
 }
 

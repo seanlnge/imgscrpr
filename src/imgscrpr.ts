@@ -1,4 +1,4 @@
-import * as Preference from './store/preference';
+import * as Preference from './database/preference';
 import * as Discord from './discord/discord';
 
 export default async function run() {

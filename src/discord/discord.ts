@@ -1,6 +1,6 @@
 import * as Discord from 'discord.js';
 import { scrape } from '../scraper/scraper';
-import * as Preference from '../store/preference';
+import * as Preference from '../database/preference';
 import { sr_score } from '../scraper/subreddits';
 import Post from '../post'
 

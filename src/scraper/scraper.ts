@@ -1,7 +1,7 @@
 import * as Reddit from './reddit';
 import Post from '../post';
-import * as Cache from '../store/cache';
-import { Preference, get_subreddit } from '../store/preference';
+import * as Cache from '../database/cache';
+import { Preference, get_subreddit } from '../database/preference';
 import { sr_score, sr_connections } from './subreddits';
 
 export async function scrape(preference: Preference) {

@@ -19,7 +19,7 @@ export async function scrape(id: string): Promise<Post> {
     let parsed_subs = subreddits.map(async (sub: string) => {
         return {
             subreddit: sub,
-            score: await SubredditScore(id, sub),
+            score: await SubredditScore(id, sub) + Math.random() / 20,
             last: Channel.subreddits[sub] ? Channel.subreddits[sub].previous_post_utc : 0
         }
     });

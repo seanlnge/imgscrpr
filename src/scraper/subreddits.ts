@@ -1,21 +1,43 @@
 import { readFileSync } from 'fs';
-import { Preference, get_subreddit } from '../database/preference';
+import { GetChannel } from '../database/preference';
 
 const subreddits = JSON.parse(readFileSync(__dirname + '/../../../public/subreddits.json', 'utf-8'));
 
-export function sr_connections(subreddit: string) {
+export function SubredditConnections(subreddit: string) {
     return subreddits[subreddit] || [];
 }
 
-export function sr_score(subreddit: string, preference: Preference): number {
-    function ud_ratio(subreddit: string) {
-        let sub_data = get_subreddit(subreddit, preference);
-        if(!sub_data) return 0;
-        
-        return sub_data.score / (sub_data.total + 8);
+export async function SubredditScore(id: string, subreddit: string): Promise<number> {
+    const Channel = await GetChannel(id);
+
+    // Find weighted upvote/downvote ratio
+    const weighted_ratio = (sname: string) => {
+        const sub = Channel.subreddits[sname];
+
+        const initial = -0.2; // Default rating
+        const weight = 2; // Amount of user ratings initial should be equal to
+
+        return sub ? (initial * weight + sub.score) / (sub.total + weight) : 0;
     }
+    const base_score = weighted_ratio(subreddit);
 
     // Add to score based on upvoted connections
-    let connection_score = sr_connections(subreddit).reduce((acc, cur) => acc + ud_ratio(cur) * 0.5, 0);
-    return ud_ratio(subreddit) + connection_score;
+    const connections = SubredditConnections(subreddit);
+    let connection_score = connections.reduce((acc: number, cur: string) => {
+        // Find distance between subreddit score and connection score
+        let ratio = weighted_ratio(cur);
+        let dist = Math.abs(base_score - ratio);
+
+        // Gaussian distribution to weight score
+        let weight = 0.8/Math.exp(-(dist ** 2));
+        let sub = Channel.subreddits[cur];
+        return acc + weight * ratio * (sub ? sub.total : 0);
+    }, 0);
+    let connection_total = connections.reduce((acc: number, cur: string) => {
+        let sub = Channel.subreddits[cur];
+        return acc + (sub ? sub.total : 0);
+    }, 0);
+
+    connection_score /= (connection_total || 1);
+    return base_score + connection_score;
 }

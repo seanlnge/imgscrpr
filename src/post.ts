@@ -3,5 +3,5 @@ export default interface Post {
     subreddit: string,
     url: string,
     video: boolean,
-    id: string
+    time: number
 }

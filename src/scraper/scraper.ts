@@ -1,57 +1,63 @@
 import * as Reddit from './reddit';
 import Post from '../post';
 import * as Cache from '../database/cache';
-import { Preference, get_subreddit } from '../database/preference';
-import { sr_score, sr_connections } from './subreddits';
+import { GetChannel } from '../database/preference';
+import { SubredditScore, SubredditConnections } from './subreddits';
 
-export async function scrape(preference: Preference) {
+export async function scrape(id: string): Promise<Post> {
+    const Channel = await GetChannel(id);
+
     // Sort all subreddits in preference database
-    let subreddits: Set<string> = new Set();
-    for(let sub of preference) {
-        subreddits.add(sub.subreddit);
-        sr_connections(sub.subreddit).forEach(a => subreddits.add(a));
+    let subreddit_set: Set<string> = new Set();
+    for(let sub in Channel.subreddits) {
+        subreddit_set.add(sub);
+        SubredditConnections(sub).forEach((a: string) => subreddit_set.add(a));
     }
+    let subreddits = Array.from(subreddit_set);
 
     // Rank subreddits from highest score to lowest score
-    let ranked_subs = Array.from(subreddits).map((sub: string) =>({
-        subreddit: sub,
-        score: sr_score(sub, preference) + Math.random() / 10,
-        last: (get_subreddit(sub, preference) || { previous_post: undefined }).previous_post
-    })).sort((a, b) => b.score - a.score);
+    let parsed_subs = subreddits.map(async (sub: string) => {
+        return {
+            subreddit: sub,
+            score: await SubredditScore(id, sub),
+            last: Channel.subreddits[sub] ? Channel.subreddits[sub].previous_post_utc : 0
+        }
+    });
+    let ranked_subs = (await Promise.all(parsed_subs)).sort((a, b) => b.score - a.score);
 
     // Gives a weighted ratio for picking top subs
     let amount = 5;
     let total = ranked_subs.slice(0, amount).reduce((a, c) => a + c.score, 0);
     let random_float = Math.random() * total;
+
     let random = ranked_subs.findIndex(a => 0 > (random_float -= a.score));
+    let end = random + amount;
 
     let post: Post = undefined;
-    while(!post) {
+    while(end != random) {
         // Obtain post
         let sub = ranked_subs[random];
-        random = (random + 1) % amount;
+        random++;
+        if(!sub) continue;
 
         // Check for post in cache
         let cached_post = Cache.get_post(sub.subreddit, sub.last);
         if(cached_post) {
             post = cached_post; 
-            break;  
+            break;
         }
 
         // Fallback to reddit post
-        let post_type = await Reddit.get_post(sub.subreddit, { after: sub.last });
-
-        // Handle errors if post invalid
-        if(!post_type) continue;
-        if(typeof post_type == "string") {
-            sub.last = post_type as string;
-            continue;
-        }
+        let posts = await Reddit.get_posts(sub.subreddit, sub.last);
+        if(!posts.length) continue;
 
         // Cache and edit preference
-        post = post_type as Post;
-        Cache.add_post(sub.subreddit, post);
+        let oldest = posts.reduce((a, c) => a.time < c.time ? a : c, posts[0]) as Post;
+        post = oldest;
+
+        Cache.add_posts(sub.subreddit, posts);
+        return post;
     }
 
-    return { post, score: ranked_subs[random].score };
+    return post;
 }

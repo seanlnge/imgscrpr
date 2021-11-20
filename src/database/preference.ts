@@ -112,7 +112,7 @@ export async function GetChannel(id: string): Promise<Preference> {
 export async function UpdateSubredditData(id: string, subreddit: string) {
     await channel(id).updateOne(
         { subreddit: { $eq: subreddit } },
-        WorkingPreferences[id].subreddits[subreddit],
+        { $set: WorkingPreferences[id].subreddits[subreddit] },
         { upsert: true }
     );
 }
@@ -124,7 +124,7 @@ export async function UpdateSubredditData(id: string, subreddit: string) {
 export async function UpdateChannelPreference(id: string) {
     await channel(id).updateOne(
         { is_preference: { $eq: true } },
-        WorkingPreferences[id].channel,
+        { $set: WorkingPreferences[id].channel },
         { upsert: true }
     );
 }

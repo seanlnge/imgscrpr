@@ -14,8 +14,8 @@ export async function SubredditScore(id: string, subreddit: string): Promise<num
     const weighted_ratio = (sname: string) => {
         const sub = Channel.subreddits[sname];
 
-        const initial = -0.2; // Default rating
-        const weight = 2; // Amount of user ratings initial should be equal to
+        const initial = 0; // Default rating
+        const weight = 8; // Amount of user ratings initial should be equal to
 
         return sub ? (initial * weight + sub.score) / (sub.total + weight) : 0;
     }
@@ -29,7 +29,7 @@ export async function SubredditScore(id: string, subreddit: string): Promise<num
         let dist = Math.abs(base_score - ratio);
 
         // Gaussian distribution to weight score
-        let weight = 0.8/Math.exp(-(dist ** 2));
+        let weight = 0.7/Math.exp(-(dist ** 2));
         let sub = Channel.subreddits[cur];
         return acc + weight * ratio * (sub ? sub.total : 0);
     }, 0);

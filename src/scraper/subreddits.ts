@@ -1,43 +1,40 @@
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { GetChannel } from '../database/preference';
 
 const subreddits = JSON.parse(readFileSync(__dirname + '/../../../public/subreddits.json', 'utf-8'));
 
 export function SubredditConnections(subreddit: string) {
-    return subreddits[subreddit] || [];
+    return subreddits[subreddit] || { score: 0, total: 0, connections: [] };
+}
+
+export async function UpdateConnections(id: string, subreddit: string, score: number, total: number) {
+    let weight = await SubredditScore(id, subreddit)/4 + 0.5;
+    subreddits[subreddit].score += score * weight;
+    subreddits[subreddit].total += total * weight;
+    writeFileSync(__dirname + '/../../../public/subreddits.json', JSON.stringify(subreddits, null));
 }
 
 export async function SubredditScore(id: string, subreddit: string): Promise<number> {
     const Channel = await GetChannel(id);
 
     // Find weighted upvote/downvote ratio
-    const weighted_ratio = (sname: string) => {
-        const sub = Channel.subreddits[sname];
-
-        const initial = 0; // Default rating
-        const weight = 8; // Amount of user ratings initial should be equal to
-
-        return sub ? (initial * weight + sub.score) / (sub.total + weight) : 0;
-    }
-    const base_score = weighted_ratio(subreddit);
+    const sub = Channel.subreddits[subreddit];
+    const base_score = sub ? sub.score / (sub.total + 8) : 0;
 
     // Add to score based on upvoted connections
-    const connections = SubredditConnections(subreddit);
-    let connection_score = connections.reduce((acc: number, cur: string) => {
-        // Find distance between subreddit score and connection score
-        let ratio = weighted_ratio(cur);
-        let dist = Math.abs(base_score - ratio);
-
-        // Gaussian distribution to weight score
-        let weight = 0.7/Math.exp(-(dist ** 2));
+    const sub_data = SubredditConnections(subreddit);
+    let ratio = sub_data.score / (sub_data.total || 1);
+    let connection_score = sub_data.connections.reduce((acc: number, cur: string) => {
+        // Verify subreddit in preference
         let sub = Channel.subreddits[cur];
-        return acc + weight * ratio * (sub ? sub.total : 0);
-    }, 0);
-    let connection_total = connections.reduce((acc: number, cur: string) => {
-        let sub = Channel.subreddits[cur];
-        return acc + (sub ? sub.total : 0);
-    }, 0);
+        if(!sub) return acc;
 
-    connection_score /= (connection_total || 1);
+        const connection = SubredditConnections(cur);
+        let connection_ratio = connection.score / (connection.total || 1);
+        let weight = 1 - Math.abs(ratio - connection_ratio);
+
+        // Disallow for 0/0
+        return acc + (sub.total ? weight * sub.score / sub.total : 0);
+    }, 0);
     return base_score + connection_score;
 }

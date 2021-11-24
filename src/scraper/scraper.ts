@@ -11,7 +11,7 @@ export async function scrape(id: string): Promise<Post> {
     let subreddit_set: Set<string> = new Set();
     for(let sub in Channel.subreddits) {
         subreddit_set.add(sub);
-        SubredditConnections(sub).forEach((a: string) => subreddit_set.add(a));
+        SubredditConnections(sub).connections.forEach((a: string) => subreddit_set.add(a));
     }
     let subreddits = Array.from(subreddit_set);
 
@@ -30,7 +30,7 @@ export async function scrape(id: string): Promise<Post> {
     let total = ranked_subs.slice(0, amount).reduce((a, c) => a + c.score, 0);
     let random_float = Math.random() * total;
 
-    let random = ranked_subs.findIndex(a => 0 > (random_float -= a.score));
+    let random = ranked_subs.findIndex(a => 0 >= (random_float -= a.score));
     let end = random + amount;
 
     let post: Post = undefined;

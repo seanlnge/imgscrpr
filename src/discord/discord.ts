@@ -1,6 +1,7 @@
 import * as Discord from 'discord.js';
 import { scrape } from '../scraper/scraper';
 import { GetChannel, UpdateSubredditData, ResetChannel } from '../database/preference';
+import { UpdateConnections } from '../scraper/subreddits';
 import Post from '../post'
 
 require('dotenv').config();
@@ -80,9 +81,13 @@ async function SendPost(msg: Discord.Message) {
     });
     
     // Send all reactions
-    for(let reaction in Channel.channel.reactions) {
+    for(const reaction in Channel.channel.reactions) {
         await Message.react(reaction);
     }
+
+    // Save previous subreddit data
+    let last_subreddit = Channel.LastAccessed();
+    if(last_subreddit) await UpdateSubredditData(msg.channelId, last_subreddit);
 
     // Get/create subreddit data in channel preference
     if(!(Post.subreddit in Channel.subreddits)) {
@@ -98,6 +103,10 @@ async function SendPost(msg: Discord.Message) {
         time: 1200000,
         dispose: true,
     });
+
+    // Store for ending
+    let initial_score = Subreddit.score;
+    let initial_total = Subreddit.total;
 
     // On reaction add
     Collector.on('collect', async reaction => {
@@ -119,7 +128,8 @@ async function SendPost(msg: Discord.Message) {
 
     // At end of 20 minutes update database
     Collector.on("end", async () => {
-        await UpdateSubredditData(msg.channel.id, Post.subreddit);
+        await UpdateSubredditData(msg.channelId, Post.subreddit);
+        await UpdateConnections(msg.channelId, Post.subreddit, Subreddit.score - initial_score, Subreddit.total - initial_total);
     });
 }
 

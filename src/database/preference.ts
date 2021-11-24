@@ -53,6 +53,20 @@ class Preference {
             last_accessed
         };
     }
+
+    /**
+     * Find name of subreddit last accessed by Discord
+     * @returns Name of subreddit last accessed
+     */
+    LastAccessed(): string {
+        const sorted = Object.keys(this.subreddits).sort((a, b) =>
+            this.subreddits[b].last_accessed - this.subreddits[a].last_accessed
+        );
+
+        if(this.subreddits[sorted[0]].last_accessed == 0) return undefined;
+
+        return sorted[0];
+    }
 }
 
 export type ChannelPreference = {

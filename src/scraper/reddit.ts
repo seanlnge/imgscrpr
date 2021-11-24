@@ -26,7 +26,7 @@ export async function get_posts(subreddit: string, after: number): Promise<Post[
         let is_image = ImageTypes.includes(post.data.url.split(/[\.\/]/g).slice(-1)[0]);
         let video = post.data.is_video;
         let timely = post.data.created_utc > after;
-        if(!(is_image || video) || !timely) {
+        if(!(is_image || video) || !timely || post.data.stickied) {
             return posts;
         }
 

@@ -18,10 +18,26 @@ Client.on("ready", () => {
     console.log(`Logged in as ${Client.user.tag}!`)
 });
 
-const HelpMessage = `
-_bruh you really need help?_
-_suffer lmfao literally no one cares_
-`;
+
+const HelpMessage = {
+    "send": ["!~", "Send an image/video"],
+    "reset": ["!~", "Reset channel preferences"],
+    "add": ["!~ subreddit", "Add a subreddit to top of feed"],
+    "remove": ["!~ subreddit", "Remove a subreddit from top of feed"]
+};
+
+async function SendHelpMessage(msg: Discord.Message) {
+    const Channel = await GetChannel(msg.channelId);
+    const embed = new Discord.MessageEmbed();
+    for(let command in HelpMessage) {
+        let data = HelpMessage[command];
+        embed.addField(
+            data[0].replace("~", Channel.channel.commands[command]),
+            data[1]
+        );
+    }
+    msg.reply({ embeds: [embed] });
+}
 
 /**
  * Add subreddit to top of channel preference
@@ -37,7 +53,7 @@ async function AddSubreddit(msg: Discord.Message, subreddit: string) {
         if(!previous) return subreddit;
         return [previous, subreddit].sort((a, b) => b.score - a.score)[0];
     }, undefined);
-    Channel.AddSubreddit(subreddit, top.score, top.total);
+    Channel.AddSubreddit(subreddit, top.score + 2, top.total + 8);
 
     // Update in database and finalize
     await UpdateSubredditData(msg.channelId, subreddit);
@@ -148,7 +164,7 @@ Client.on("messageCreate", async msg => {
 
     const message = msg.content.slice(1).split(/\s/g);
     message.filter(a => a.length != 0);
-    if(message[0] == "help") await msg.channel.send(`<@${msg.author}>${HelpMessage}`);
+    if(message[0] == "help") await SendHelpMessage(msg);
 
     if(message[0] == "add") await AddSubreddit(msg, message[1]);
     if(message[0] == 'remove') await RemoveSubreddit(msg, message[1]);

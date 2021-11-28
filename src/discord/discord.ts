@@ -29,6 +29,7 @@ const HelpMessage = {
 async function SendHelpMessage(msg: Discord.Message) {
     const Channel = await GetChannel(msg.channelId);
     const embed = new Discord.MessageEmbed();
+    embed.setTitle("Imgscrpr Commands");
     for(let command in HelpMessage) {
         let data = HelpMessage[command];
         embed.addField(
@@ -53,11 +54,11 @@ async function AddSubreddit(msg: Discord.Message, subreddit: string) {
         if(!previous) return subreddit;
         return [previous, subreddit].sort((a, b) => b.score - a.score)[0];
     }, undefined);
-    Channel.AddSubreddit(subreddit, top.score + 2, top.total + 8);
+    Channel.AddSubreddit(subreddit, top.score + 1, top.total);
 
     // Update in database and finalize
     await UpdateSubredditData(msg.channelId, subreddit);
-    await msg.channel.send(`__r/${subreddit}__ has been added to your personalized feed`);
+    await msg.channel.send(`**r/${subreddit}** has been added to your personalized feed`);
 }
 
 /**
@@ -76,6 +77,19 @@ async function RemoveSubreddit(msg: Discord.Message, subreddit: string) {
 
 async function SendPost(msg: Discord.Message) {
     const Channel = await GetChannel(msg.channelId);
+    if(
+        Date.now() - Channel.channel.last_accessed < 300000
+        && !Channel.channel.premium
+    ) {
+        let time_left = 300000 - (Date.now() - Channel.channel.last_accessed);
+        const embed = new Discord.MessageEmbed();
+        embed.description = `Thanks for recognition, but API calls are expensive\n\n`
+                          + `Please wait **${Math.ceil(time_left/1000)} seconds** or upgrade to our premium version`;
+        await msg.channel.send({ embeds: [embed] });
+        return;
+    }
+    console.log(Date.now() - Channel.channel.last_accessed);
+
     const Post: Post = await scrape(msg.channelId);
 
     if(!Post) {
@@ -112,6 +126,7 @@ async function SendPost(msg: Discord.Message) {
     const Subreddit = Channel.subreddits[Post.subreddit];
     Subreddit.previous_post_utc = Post.time;
     Subreddit.last_accessed = Date.now();
+    Channel.channel.last_accessed = Date.now();
     
     // Collect reactions
     const Collector = Message.createReactionCollector({
@@ -166,8 +181,8 @@ Client.on("messageCreate", async msg => {
     message.filter(a => a.length != 0);
     if(message[0] == "help") await SendHelpMessage(msg);
 
-    if(message[0] == "add") await AddSubreddit(msg, message[1]);
-    if(message[0] == 'remove') await RemoveSubreddit(msg, message[1]);
+    if(message[0] == "add") await AddSubreddit(msg, message[1].replace(/(r\/|\/)/g, ""));
+    if(message[0] == 'remove') await RemoveSubreddit(msg, message[1].replace(/(r\/|\/)/g, ""));
     if(message[0] == "send") await SendPost(msg);
     if(message[0] == "reset") await Reset(msg);
 });

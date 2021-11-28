@@ -25,6 +25,7 @@ class Preference {
 
         const channel_preference = {
             last_accessed: 0,
+            premium: false,
             commands: {
                 'send': 'send',
                 'reset': 'reset',
@@ -71,6 +72,7 @@ class Preference {
 
 export type ChannelPreference = {
     last_accessed: number,
+    premium: boolean,
     commands: { [key: string]: string },
     reactions: { [key: string]: number }
 }

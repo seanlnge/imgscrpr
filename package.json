@@ -27,6 +27,7 @@
     "@types/node": "^16.11.1"
   },
   "scripts": {
+    "dothing": "tsc && node dist/index",
     "start": "node dist/index",
     "postinstall": "tsc",
     "deploy": "git add . && git commit -m Heroku && git push heroku master"

@@ -9,37 +9,13 @@ class Preference {
     subreddits: { [key: string]: SubredditData };
     channel: ChannelPreference;
 
-    constructor(subreddits: string[] = [
-        "thatsinsane", "memes", "gayspiderbrothel"
-    ]) {
-        this.subreddits = {};
+    initialize: () => Preference;
 
-        for(let subreddit of subreddits) {
-            this.subreddits[subreddit] = {
-                score: 0,
-                total: 0,
-                previous_post_utc: 0,
-                last_accessed: 0
-            };
-        }
-
-        const channel_preference = {
-            last_accessed: 0,
-            premium: false,
-            commands: {
-                'send': 'send',
-                'reset': 'reset',
-                'add': 'add',
-                'remove': 'remove',
-            },
-            reactions: {
-                '🟢': 1,
-                '🔴': -1
-            }
-        };
-        this.channel = channel_preference;
+    constructor(subreddits: { [key: string]: SubredditData }, channel: ChannelPreference) {
+        this.subreddits = subreddits;
+        this.channel = channel;
     }
-
+    
     AddSubreddit(
         subreddit: string,
         score: number = 0,
@@ -70,9 +46,45 @@ class Preference {
     }
 }
 
+Preference.prototype.initialize = (subreddits: string[] = [
+    "thatsinsane", "memes", "gayspiderbrothel"
+]): Preference => {
+        const parsed_subreddits = {};
+
+        for(let subreddit of subreddits) {
+            parsed_subreddits[subreddit] = {
+                score: 0,
+                total: 0,
+                previous_post_utc: 0,
+                last_accessed: 0
+            };
+        }
+
+        const channel_preference = {
+            last_accessed: 0,
+            premium: false,
+            allow_nsfw: false,
+            allow_video: true,
+            commands: {
+                'send': 'send',
+                'reset': 'reset',
+                'add': 'add',
+                'remove': 'remove',
+            },
+            reactions: {
+                '🟢': 1,
+                '🔴': -1
+            }
+        };
+
+        return new Preference(parsed_subreddits, channel_preference);
+}
+
 export type ChannelPreference = {
     last_accessed: number,
     premium: boolean,
+    allow_nsfw: boolean,
+    allow_video: boolean,
     commands: { [key: string]: string },
     reactions: { [key: string]: number }
 }
@@ -87,12 +99,12 @@ export type SubredditData = {
 const WorkingPreferences: { [key: string]: Preference } = {};
 
 function channel(id: string) {
-    return client.db("preferences").collection(id);
+    return client.db("channels").collection(id);
 }
 
 async function initialize_channel(id: string) {
     // Create new preference
-    WorkingPreferences[id] = new Preference();
+    WorkingPreferences[id] = Preference.prototype.initialize();
 
     // Parse subreddits to insert into db
     const parsed_subreddits = [];
@@ -110,12 +122,22 @@ export async function GetChannel(id: string): Promise<Preference> {
     if(id in WorkingPreferences) return WorkingPreferences[id];
 
     // Find channel preference in db
-    const preference = await channel(id).find({ preference: { $eq: true } }).toArray()[0];
-    if(preference) {
-        delete preference.preference;
+    const channelPref = await channel(id).findOne({ preference: { $eq: true } });
+    if(channelPref) {
+        delete channelPref.preference;
+
+        // Parse subreddits to insert into db
+        const subreddits = {};
+        for(let sub of await channel(id).find({ subreddit: { $exists: true } }).toArray()) {
+            const subreddit = sub.subreddit;
+            delete sub.subreddit;
+            subreddits[subreddit] = sub;
+        }
+        const preference = new Preference(subreddits, channelPref as ChannelPreference);
+        WorkingPreferences[id] = preference;
         return preference;
     }
-
+    
     await initialize_channel(id);
     return WorkingPreferences[id];
 }

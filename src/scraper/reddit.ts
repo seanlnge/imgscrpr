@@ -77,6 +77,7 @@ export async function get_posts(subreddit: string, after: number): Promise<Post[
             subreddit,
             url,
             video: post.data.is_video,
+            nsfw: post.data.over_18,
             time: parseInt(post.data.created_utc)
         });
         return posts;

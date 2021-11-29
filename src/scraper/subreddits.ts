@@ -19,22 +19,23 @@ export async function SubredditScore(id: string, subreddit: string): Promise<num
 
     // Find weighted upvote/downvote ratio
     const sub = Channel.subreddits[subreddit];
-    const base_score = sub ? sub.score / (sub.total + 8) : 0;
+    const base_score = sub ? sub.score / (sub.total + 4) : 0;
 
     // Add to score based on upvoted connections
     const sub_data = SubredditConnections(subreddit);
-    let ratio = sub_data.score / (sub_data.total || 1);
+    let ratio = sub_data.score / (sub_data.total + 4);
     let connection_score = sub_data.connections.reduce((acc: number, cur: string) => {
         // Verify subreddit in preference
         let sub = Channel.subreddits[cur];
         if(!sub) return acc;
 
-        const connection = SubredditConnections(cur);
-        let connection_ratio = connection.score / (connection.total || 1);
-        let weight = 1 - Math.abs(ratio - connection_ratio);
+        //const connection = SubredditConnections(cur);
+        //let connection_ratio = connection.score / (connection.total || 1);
+        //let weight = 1 - Math.abs(ratio - connection_ratio);
 
         // Disallow for 0/0
-        return acc + (sub.total ? weight * sub.score / sub.total : 0);
+        return acc + sub.score / (sub.total + 4);
     }, 0);
+    
     return base_score + connection_score;
 }

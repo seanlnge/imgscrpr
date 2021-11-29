@@ -3,4 +3,5 @@
 
 **A - E** - Urgency
 ***
-* 5D Setup website
+* add discord error async error catching
+* idk what to put but something

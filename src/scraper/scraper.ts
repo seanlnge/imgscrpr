@@ -53,6 +53,7 @@ export async function scrape(id: string): Promise<Post> {
 
         // Cache and edit preference
         let oldest = posts.reduce((a, c) => a.time < c.time ? a : c, posts[0]) as Post;
+        if(oldest.nsfw && !Channel.channel.allow_nsfw) continue;
         post = oldest;
 
         Cache.add_posts(sub.subreddit, posts);

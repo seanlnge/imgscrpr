@@ -40,7 +40,7 @@ Client.on("messageCreate", async msg => {
     if(Channel.channel.commands["add"] == command) await AddSubreddit(msg, options);
     if(Channel.channel.commands["remove"] == command) await RemoveSubreddit(msg, options);
     if(Channel.channel.commands["send"] == command) await SendPost(msg, options);
-    if(Channel.channel.commands["reset"] == command) await Reset(msg, options);
+    if(Channel.channel.commands["reset"] == command) await Reset(msg);
 });
 
 export function login() {

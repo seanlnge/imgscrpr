@@ -6,8 +6,9 @@ import { GetChannel, UpdateSubredditData } from '../../database/preference';
  * @param msg Discord message object
  * @param subreddit Subreddit name
  */
-export async function AddSubreddit(msg: Discord.Message, subreddit: string) {
+export async function AddSubreddit(msg: Discord.Message, options: string[]) {
     const Channel = await GetChannel(msg.channelId);
+    const subreddit = options[0].replace(/(r\/|\/)/g, "");
 
     // Get top subreddit in preference
     let top = Object.keys(Channel.subreddits).reduce((previous: any, sname) => {
@@ -27,8 +28,10 @@ export async function AddSubreddit(msg: Discord.Message, subreddit: string) {
  * @param msg Discord message object
  * @param subreddit Subreddit name
  */
-export async function RemoveSubreddit(msg: Discord.Message, subreddit: string) {
+export async function RemoveSubreddit(msg: Discord.Message, options: string[]) {
     const Channel = await GetChannel(msg.channelId);
+    const subreddit = options[0].replace(/(r\/|\/)/g, "");
+
     delete Channel.subreddits[subreddit];
 
     // Update in database and finalize

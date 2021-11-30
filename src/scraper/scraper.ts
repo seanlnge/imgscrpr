@@ -4,7 +4,7 @@ import * as Cache from '../database/cache';
 import { GetChannel } from '../database/preference';
 import { SubredditScore, SubredditConnections } from './subreddits';
 
-export async function scrape(id: string): Promise<Post> {
+async function ranked_subreddits(id: string): Promise<{ subreddit: string, score: number, last: number }[]> {
     const Channel = await GetChannel(id);
 
     // Sort all subreddits in preference database
@@ -23,7 +23,32 @@ export async function scrape(id: string): Promise<Post> {
             last: Channel.subreddits[sub] ? Channel.subreddits[sub].previous_post_utc : 0
         }
     });
-    let ranked_subs = (await Promise.all(parsed_subs)).sort((a, b) => b.score - a.score);
+    return (await Promise.all(parsed_subs)).sort((a, b) => b.score - a.score);
+}
+
+export async function ScrapeFromSubreddit(id: string, sort: string, subreddit: string): Promise<Post> {
+    const Channel = await GetChannel(id);
+
+    // Check for cached posts
+    if(sort == 'hot') {
+        let cached_post = Cache.get_post(subreddit, Channel.subreddits[subreddit].previous_post_utc);
+        if(cached_post) return cached_post;
+    }
+
+    // Look through reddit
+    let posts = await Reddit.get_posts(subreddit, Channel.subreddits[subreddit].previous_post_utc, sort);
+    posts = posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
+    if(!posts.length) return undefined;
+
+    // Cache and finalize
+    let post = posts.reduce((a, c) => a.time < c.time ? a : c, posts[0]) as Post;
+    Cache.add_posts(subreddit, posts);
+    return post;
+}
+
+export async function ScrapeFromFeed(id: string, sort: string): Promise<Post> {
+    const Channel = await GetChannel(id);
+    const ranked_subs = await ranked_subreddits(id);
 
     // Gives a weighted ratio for picking top subs
     let amount = 5;
@@ -33,7 +58,6 @@ export async function scrape(id: string): Promise<Post> {
     let random = ranked_subs.findIndex(a => 0 >= (random_float -= a.score));
     let end = random + amount;
 
-    let post: Post = undefined;
     while(end != random) {
         // Obtain post
         let sub = ranked_subs[random];
@@ -41,24 +65,21 @@ export async function scrape(id: string): Promise<Post> {
         if(!sub) continue;
 
         // Check for post in cache
-        let cached_post = Cache.get_post(sub.subreddit, sub.last);
-        if(cached_post) {
-            post = cached_post; 
-            break;
+        if(sort == 'hot') {
+            let cached_post = Cache.get_post(sub.subreddit, sub.last);
+            if(cached_post) return cached_post;
         }
 
         // Fallback to reddit post
-        let posts = await Reddit.get_posts(sub.subreddit, sub.last);
+        let posts = await Reddit.get_posts(sub.subreddit, sub.last, sort);
+        posts = posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
         if(!posts.length) continue;
 
-        // Cache and edit preference
-        let oldest = posts.reduce((a, c) => a.time < c.time ? a : c, posts[0]) as Post;
-        if(oldest.nsfw && !Channel.channel.allow_nsfw) continue;
-        post = oldest;
-
+        // Cache and finalize
+        let post = posts.reduce((a, c) => a.time < c.time ? a : c, posts[0]) as Post;
         Cache.add_posts(sub.subreddit, posts);
         return post;
     }
 
-    return post;
+    return undefined;
 }

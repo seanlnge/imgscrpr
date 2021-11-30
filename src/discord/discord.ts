@@ -2,7 +2,7 @@ import * as Discord from 'discord.js';
 import { GetChannel } from '../database/preference';
 require('dotenv').config();
 
-import { AddSubreddit, RemoveSubreddit } from './commands/subreddits';
+import { AddSubreddit, RemoveSubreddit } from './commands/customize';
 import { SendHelpMessage, SendPremiumMessage } from './commands/main';
 import { SendPost } from './commands/send';
 import { Reset } from './commands/reset';
@@ -27,19 +27,20 @@ Client.on("messageCreate", async msg => {
     if(msg.author.bot) return;
     if(!['.i ', '.I '].includes(msg.content.trim().slice(0, 3))) return;
 
-    const message = msg.content.slice(3).split(/\s/g);
-    message.filter(a => a.length != 0);
+    const message = msg.content.slice(3).split(/\s/g).filter(a => a.length != 0);
+    const command = message[0];
+    const options = message.slice(1);
 
     // Base commands
-    if(["help", "info"].includes(message[0])) await SendHelpMessage(msg);
-    if(["upgrade", "premium"].includes(message[0])) await SendPremiumMessage(msg);
+    if(["help", "info"].includes(command)) await SendHelpMessage(msg);
+    if(["upgrade", "premium"].includes(command)) await SendPremiumMessage(msg);
 
     // Premium customizable commands
     const Channel = await GetChannel(msg.channelId);
-    if(Channel.channel.commands["add"] == message[0]) await AddSubreddit(msg, message[1].replace(/(r\/|\/)/g, ""));
-    if(Channel.channel.commands["remove"] == message[0]) await RemoveSubreddit(msg, message[1].replace(/(r\/|\/)/g, ""));
-    if(Channel.channel.commands["send"] == message[0]) await SendPost(msg);
-    if(Channel.channel.commands["reset"] == message[0]) await Reset(msg);
+    if(Channel.channel.commands["add"] == command) await AddSubreddit(msg, options);
+    if(Channel.channel.commands["remove"] == command) await RemoveSubreddit(msg, options);
+    if(Channel.channel.commands["send"] == command) await SendPost(msg, options);
+    if(Channel.channel.commands["reset"] == command) await Reset(msg, options);
 });
 
 export function login() {

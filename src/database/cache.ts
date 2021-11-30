@@ -4,8 +4,8 @@ const CachedPosts: { [key: string]: Post[] } = {};
 
 export function get_post(subreddit: string, after: number): Post {
     if(!(subreddit in CachedPosts)) return undefined;
-    let post = CachedPosts[subreddit].find(post => after < post.time);
-    return post;
+
+    return CachedPosts[subreddit].find(post => after < post.time);
 }
 
 export function add_posts(subreddit: string, posts: Post[]) {

@@ -14,8 +14,8 @@ const axios = Axios.default;
 
 const ImageTypes = ['jpg', 'png', 'gif', 'jpeg'];
 
-export async function get_posts(subreddit: string, after: number): Promise<Post[]> {
-    let reddit_response = await reddit.get(`/r/${subreddit}/hot`, { count: 20 }).catch(err => console.log(err));
+export async function get_posts(subreddit: string, after: number, sort: string): Promise<Post[]> {
+    let reddit_response = await reddit.get(`/r/${subreddit}/${sort}`, { count: 20 }).catch(err => console.log(err));
     if(!reddit_response) return [];
     
     // Parse list of posts

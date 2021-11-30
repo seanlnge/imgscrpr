@@ -36,8 +36,8 @@ export async function SendPremiumMessage(msg: Discord.Message) {
     embed.setColor("#d62e00");
     embed.setURL("https://www.patreon.com/imgscrpr");
     embed.setThumbnail("https://i.imgur.com/BdjBe41.png");
-    embed.setDescription("Premium removes rate limits and adds many perks. It amplifies your experience greatly, and also supports us in hosting Imgscrpr and creating a better experience for everyone.");
-    embed.addField("No Rate Limit", "Changes the waiting time between posts from 60 seconds to 0 seconds");
+    embed.setDescription("Premium removes long rate limits and adds many perks. It amplifies your experience greatly, and also supports us in hosting Imgscrpr and creating a better experience for everyone.");
+    embed.addField("Tiny Rate Limit", "Changes the waiting time between posts from 60 seconds to 2 seconds");
     embed.addField("Customizable Votes", "Gives the ability to edit the upvote/downvote reactions, as well as adding new ones");
     embed.addField("Change Commands", "Allows you to not only rename commands, but also to make new ones");
     embed.setFooter("Although buying premium enhances your channel's experience as well as supporting us, it isn't necessary, and we will still appreciate you regardless");

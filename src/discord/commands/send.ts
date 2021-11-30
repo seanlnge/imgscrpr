@@ -1,12 +1,12 @@
 import * as Discord from 'discord.js';
 import { GetChannel, UpdateSubredditData } from '../../database/preference';
-import { scrape } from '../../scraper/scraper';
+import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../scraper/scraper';
 import Post from '../../post';
 import { UpdateConnections } from '../../scraper/subreddits';
 
 const WaitTimeMs = 60000;
 
-export async function SendPost(msg: Discord.Message) {
+export async function SendPost(msg: Discord.Message, options: string[]) {
     const Channel = await GetChannel(msg.channelId);
     if(
         Date.now() - Channel.channel.last_accessed < WaitTimeMs
@@ -21,10 +21,38 @@ export async function SendPost(msg: Discord.Message) {
         return;
     }
 
-    const Post: Post = await scrape(msg.channelId);
+    const Post: (Post | string) = await (async () => {
+        // Acceptable sorting algorithms
+        const sorts = ['hot', 'new', 'rising', 'top'];
+
+        switch(options.length) {
+            // Given only a sort
+            case 1:
+                if(!sorts.includes(options[0])) {
+                    return `Sorry, ${options[0]} is not a valid sorting option. Please choose from: ${sorts.join(', ')}`;
+                }
+                return await ScrapeFromFeed(msg.channelId, options[0]);
+
+            // Given a sort and a subreddit
+            case 2:
+                if(!sorts.includes(options[0])) {
+                    return `Sorry, ${options[0]} is not a valid sorting option. Please choose from: ${sorts.join(', ')}`;
+                }
+                return await ScrapeFromSubreddit(msg.channelId, options[0], options[1]);
+
+            // Default post sending is from feed on hot
+            default:
+                return await ScrapeFromFeed(msg.channelId, 'hot');
+        }
+    })();
+
+    if(typeof Post == "string") {
+        await msg.reply(Post);
+        return;
+    }
 
     if(!Post) {
-        await msg.channel.send("We had some issues, please try again");
+        await msg.reply("We had some issues, please try again");
         return;
     }
 

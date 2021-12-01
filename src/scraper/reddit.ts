@@ -14,8 +14,8 @@ const axios = Axios.default;
 
 const ImageTypes = ['jpg', 'png', 'gif', 'jpeg'];
 
-export async function get_posts(subreddit: string, after: number, sort: string): Promise<Post[]> {
-    let reddit_response = await reddit.get(`/r/${subreddit}/${sort}`, { count: 20 }).catch(err => console.log(err));
+export async function get_posts(subreddit: string, after: number): Promise<Post[]> {
+    let reddit_response = await reddit.get(`/r/${subreddit}/hot`, { count: 20 }).catch(err => console.log(err));
     if(!reddit_response) return [];
     
     // Parse list of posts
@@ -25,6 +25,7 @@ export async function get_posts(subreddit: string, after: number, sort: string):
         // Check if post fits basic checks
         let is_image = ImageTypes.includes(post.data.url.split(/[\.\/]/g).slice(-1)[0]);
         let video = post.data.is_video;
+        let audio: string = undefined;
         let timely = post.data.created_utc > after;
         if(!(is_image || video) || !timely || post.data.stickied) {
             return posts;
@@ -42,7 +43,8 @@ export async function get_posts(subreddit: string, after: number, sort: string):
             }
             
             // Is video length discord-send-able
-            for(let size of ['1080', '480', '360', '240', 'end']) {
+            let size: string;
+            for(size of ['1080', '480', '360', '240', 'end']) {
                 if(size == 'end') return posts;
 
                 // Lower video size
@@ -57,6 +59,7 @@ export async function get_posts(subreddit: string, after: number, sort: string):
                 // Is good
                 if(length <= 8000000) break;
             }
+            audio = url.replace(size, 'audio');
         } 
         
         // Handle post if image
@@ -77,6 +80,7 @@ export async function get_posts(subreddit: string, after: number, sort: string):
             subreddit,
             url,
             video: post.data.is_video,
+            audio,
             nsfw: post.data.over_18,
             time: parseInt(post.data.created_utc)
         });

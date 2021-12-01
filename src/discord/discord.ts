@@ -2,10 +2,8 @@ import * as Discord from 'discord.js';
 import { GetChannel } from '../database/preference';
 require('dotenv').config();
 
-import { AddSubreddit, RemoveSubreddit } from './commands/customize';
-import { SendHelpMessage, SendPremiumMessage } from './commands/main';
-import { SendPost } from './commands/send';
-import { Reset } from './commands/reset';
+import { SendHelpMessage, SendPremiumMessage } from './commands/static';
+import { AddSubreddit, RemoveSubreddit, Reset, SendPost } from './commands/dynamic';
 
 const Client = new Discord.Client({
     intents: [
@@ -18,17 +16,17 @@ const Client = new Discord.Client({
 Client.on("ready", () => {
     console.log(`Logged in as ${Client.user.tag}!`);
     Client.user.setPresence({
-        activities: [{ name: 'for .i help or .i info', type: 'WATCHING' }],
+        activities: [{ name: 'for i.help or i.info', type: 'WATCHING' }],
         status: "online"
     });
 });
 
 Client.on("messageCreate", async msg => {
     if(msg.author.bot) return;
-    if(!['.i ', '.I '].includes(msg.content.trim().slice(0, 3))) return;
+    if(!['i.', 'I.'].includes(msg.content.trim().slice(0, 2))) return;
 
-    const message = msg.content.slice(3).split(/\s/g).filter(a => a.length != 0);
-    const command = message[0];
+    const message = msg.content.slice(2).split(/\s/g).filter(a => a.length != 0);
+    const command = message[0].toLowerCase();
     const options = message.slice(1);
 
     // Base commands

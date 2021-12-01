@@ -1,5 +1,64 @@
-import * as Discord from 'discord.js';
-import { GetChannel, UpdateSubredditData } from '../../database/preference';
+import * as Discord from 'discord.js'
+import { GetChannel, UpdateSubredditData, ResetChannel } from '../../database/preference';
+
+/**
+ * Add subreddit to top of channel preference
+ * @param msg Discord message object
+ * @param subreddit Subreddit name
+ */
+export async function AddSubreddit(msg: Discord.Message, options: string[]) {
+    if(options.length == 0) {
+        msg.reply("Subreddit name needs to be included: `i.add subreddit`");
+        return;
+    }
+
+    const Channel = await GetChannel(msg.channelId);
+    const subreddit = options[0].replace(/(r\/|\/)/g, "");
+
+    // Get top subreddit in preference
+    let top = Object.keys(Channel.subreddits).reduce((previous: any, sname) => {
+        let subreddit = Channel.subreddits[sname];
+        if(!previous) return subreddit;
+        return [previous, subreddit].sort((a, b) => b.score - a.score)[0];
+    }, undefined);
+    Channel.AddSubreddit(subreddit, top.score + 3, top.total);
+
+    // Update in database and finalize
+    await UpdateSubredditData(msg.channelId, subreddit);
+    await msg.channel.send(`**r/${subreddit}** has been added to the personalized feed`);
+}
+
+/**
+ * Remove subreddit from channel preferences
+ * @param msg Discord message object
+ * @param subreddit Subreddit name
+ */
+export async function RemoveSubreddit(msg: Discord.Message, options: string[]) {
+    if(options.length == 0) {
+        msg.reply("Subreddit name needs to be included: `i.remove subreddit`");
+        return;
+    }
+
+    const Channel = await GetChannel(msg.channelId);
+    const subreddit = options[0].replace(/(r\/|\/)/g, "");
+
+    delete Channel.subreddits[subreddit];
+
+    // Update in database and finalize
+    await UpdateSubredditData(msg.channelId, subreddit);
+    await msg.channel.send(`__r/${subreddit}__ will no longer show up in the feed`);
+}
+
+/**
+ * Reset channel and channel preferences
+ * @param msg Discord message object
+ */
+export async function Reset(msg: Discord.Message) {
+    await ResetChannel(msg.channelId);
+    await msg.channel.send("Channel reset");
+}
+
+
 import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../scraper/scraper';
 import Post from '../../post';
 import { UpdateConnections } from '../../scraper/subreddits';
@@ -22,28 +81,8 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     }
 
     const Post: (Post | string) = await (async () => {
-        // Acceptable sorting algorithms
-        const sorts = ['hot', 'new', 'rising', 'top'];
-
-        switch(options.length) {
-            // Given only a sort
-            case 1:
-                if(!sorts.includes(options[0])) {
-                    return `Sorry, ${options[0]} is not a valid sorting option. Please choose from: ${sorts.join(', ')}`;
-                }
-                return await ScrapeFromFeed(msg.channelId, options[0]);
-
-            // Given a sort and a subreddit
-            case 2:
-                if(!sorts.includes(options[0])) {
-                    return `Sorry, ${options[0]} is not a valid sorting option. Please choose from: ${sorts.join(', ')}`;
-                }
-                return await ScrapeFromSubreddit(msg.channelId, options[0], options[1]);
-
-            // Default post sending is from feed on hot
-            default:
-                return await ScrapeFromFeed(msg.channelId, 'hot');
-        }
+        if(options[0]) return await ScrapeFromSubreddit(msg.channelId, options[0]);
+        return await ScrapeFromFeed(msg.channelId);
     })();
 
     if(typeof Post == "string") {
@@ -72,11 +111,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     
     // Send all reactions
     for(const reaction in Channel.channel.reactions) {
-        try {
-            await Message.react(reaction);
-        } catch {
-            return;
-        }
+        await Message.react(reaction);
     }
 
     // Save previous subreddit data

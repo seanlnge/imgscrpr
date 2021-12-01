@@ -26,17 +26,16 @@ async function ranked_subreddits(id: string): Promise<{ subreddit: string, score
     return (await Promise.all(parsed_subs)).sort((a, b) => b.score - a.score);
 }
 
-export async function ScrapeFromSubreddit(id: string, sort: string, subreddit: string): Promise<Post> {
+export async function ScrapeFromSubreddit(id: string, subreddit: string): Promise<Post> {
     const Channel = await GetChannel(id);
+    const sub = Channel.subreddits[subreddit];
 
     // Check for cached posts
-    if(sort == 'hot') {
-        let cached_post = Cache.get_post(subreddit, Channel.subreddits[subreddit].previous_post_utc);
-        if(cached_post) return cached_post;
-    }
+    let cached_post = Cache.get_post(subreddit, sub ? sub.previous_post_utc : 0);
+    if(cached_post) return cached_post;
 
     // Look through reddit
-    let posts = await Reddit.get_posts(subreddit, Channel.subreddits[subreddit].previous_post_utc, sort);
+    let posts = await Reddit.get_posts(subreddit, sub ? sub.previous_post_utc : 0);
     posts = posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
     if(!posts.length) return undefined;
 
@@ -46,7 +45,7 @@ export async function ScrapeFromSubreddit(id: string, sort: string, subreddit: s
     return post;
 }
 
-export async function ScrapeFromFeed(id: string, sort: string): Promise<Post> {
+export async function ScrapeFromFeed(id: string): Promise<Post> {
     const Channel = await GetChannel(id);
     const ranked_subs = await ranked_subreddits(id);
 
@@ -65,13 +64,11 @@ export async function ScrapeFromFeed(id: string, sort: string): Promise<Post> {
         if(!sub) continue;
 
         // Check for post in cache
-        if(sort == 'hot') {
-            let cached_post = Cache.get_post(sub.subreddit, sub.last);
-            if(cached_post) return cached_post;
-        }
+        let cached_post = Cache.get_post(sub.subreddit, sub.last);
+        if(cached_post) return cached_post;
 
         // Fallback to reddit post
-        let posts = await Reddit.get_posts(sub.subreddit, sub.last, sort);
+        let posts = await Reddit.get_posts(sub.subreddit, sub.last);
         posts = posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
         if(!posts.length) continue;
 

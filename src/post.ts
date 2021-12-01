@@ -3,6 +3,7 @@ export default interface Post {
     subreddit: string,
     url: string,
     video: boolean,
+    audio: string,
     nsfw: boolean,
     time: number,
 }

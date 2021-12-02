@@ -170,7 +170,7 @@ const settings = {
     "premium": ["Account Upgraded"]
 };
 
-export async function Settings(msg: Discord.Message) {
+export async function SendSettings(msg: Discord.Message) {
     const Channel = await GetChannel(msg.channelId);
 
     const make_embed = async (index: number) => {

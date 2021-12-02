@@ -3,7 +3,7 @@ import { GetChannel } from '../database/preference';
 require('dotenv').config();
 
 import { SendHelpMessage, SendPremiumMessage } from './commands/static';
-import { AddSubreddit, RemoveSubreddit, Reset, SendPost } from './commands/dynamic';
+import { AddSubreddit, RemoveSubreddit, Reset, SendPost, SendSettings } from './commands/dynamic';
 
 const Client = new Discord.Client({
     intents: [
@@ -32,6 +32,7 @@ Client.on("messageCreate", async msg => {
     // Base commands
     if(["help", "info"].includes(command)) await SendHelpMessage(msg);
     if(["upgrade", "premium"].includes(command)) await SendPremiumMessage(msg);
+    if(["settings"].includes(command)) await SendSettings(msg);
 
     // Premium customizable commands
     const Channel = await GetChannel(msg.channelId);

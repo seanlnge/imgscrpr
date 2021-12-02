@@ -5,21 +5,22 @@ import Post from '../post';
 require('dotenv').config();
 
 const reddit = new Reddit({
-    username: process.env.REDDIT_USERNAME,
-    password: process.env.REDDIT_PASSWORD,
-    appId: process.env.ID,
-    appSecret: process.env.SECRET
+    //username: process.env.REDDIT_USERNAME,
+    //password: process.env.REDDIT_PASSWORD,
+    //appId: process.env.ID,
+    //appSecret: process.env.SECRET
 });
 const axios = Axios.default;
 
 const ImageTypes = ['jpg', 'png', 'gif', 'jpeg'];
 
-export async function get_posts(subreddit: string, after: number): Promise<Post[]> {
-    let reddit_response = await reddit.get(`/r/${subreddit}/hot`, { count: 20 }).catch(err => console.log(err));
-    if(!reddit_response) return [];
+export async function get_posts(subreddit: string, after: number): Promise<Post[] | string> {
+    //let reddit_response = await reddit.get(`/r/${subreddit}/hot`, { count: 20 }).catch(err => console.log(err));
+    const reddit_response = (await axios.get(`https://reddit.com/r/${subreddit}/rising.json?limit=4`).catch(err => ({ data: undefined }))).data;
+    if(!reddit_response) return "That subreddit doesn't exist!";
     
     // Parse list of posts
-    return await reddit_response.data.children.reduce(async (unawaited_posts: Promise<any[]>, post: any) => {
+    return await reddit_response.data.children.reduce(async (unawaited_posts: Promise<any[]>, post: any, i) => {
         const posts = await unawaited_posts;
 
         // Check if post fits basic checks
@@ -53,7 +54,7 @@ export async function get_posts(subreddit: string, after: number): Promise<Post[
                 url = url.slice(0, start) + size + url.slice(end);
 
                 // Is current video length good
-                const length = await axios.head(url).then(res => parseInt(res.headers['content-length'])).catch(() => 0);
+                const length = await axios.head(url).then(res => parseInt(res.headers['content-length'])).catch(() => undefined);
                 if(!length) continue;
                 
                 // Is good
@@ -65,13 +66,9 @@ export async function get_posts(subreddit: string, after: number): Promise<Post[
         // Handle post if image
         else {
             // Is image hosted on trusted site
-            if(!['redd', 'imgur'].includes(url.split(/\./g)[1].slice(0, 4))) {
+            if(!['reddit', 'imgur'].includes(url.split(/\./g)[1])) {
                 return posts;
             }
-
-            // Is image discord-send-able
-            const length = await axios.head(url).then(res => parseInt(res.headers['content-length'])).catch(err => 8000001);
-            if(length > 8000000) return posts;
         }
 
         // Parse post and return

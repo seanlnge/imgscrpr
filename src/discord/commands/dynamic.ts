@@ -62,6 +62,7 @@ export async function Reset(msg: Discord.Message) {
 import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../scraper/scraper';
 import Post from '../../post';
 import { UpdateConnections } from '../../scraper/subreddits';
+import { send } from 'process';
 
 const WaitTimeMs = 60000;
 
@@ -81,7 +82,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     }
 
     const Post: (Post | string) = await (async () => {
-        if(options[0]) return await ScrapeFromSubreddit(msg.channelId, options[0]);
+        if(options[0]) return await ScrapeFromSubreddit(msg.channelId, options[0].replace(/(r\/|\/)/g, ""));
         return await ScrapeFromFeed(msg.channelId);
     })();
 
@@ -160,5 +161,65 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     Collector.on("end", async () => {
         await UpdateSubredditData(msg.channelId, Post.subreddit);
         await UpdateConnections(msg.channelId, Post.subreddit, Subreddit.score - initial_score, Subreddit.total - initial_total);
+    });
+}
+
+const settings = {
+    "allow_nsfw": ["Allow NSFW Posts"],
+    "allow_video": ["Allow Video Posts"],
+    "premium": ["Account Upgraded"]
+};
+
+export async function Settings(msg: Discord.Message) {
+    const Channel = await GetChannel(msg.channelId);
+
+    const make_embed = async (index: number) => {
+        const embed = new Discord.MessageEmbed();
+        embed.setTitle("Imgscrpr Settings");
+        embed.setColor("#d62e00");
+
+        for(const setting in settings) {
+            let name = settings[setting][0];
+            if(Object.keys(settings)[index] == setting) name = '**|** ' + name;
+            embed.addField(name, Channel.channel[setting]);
+        }
+        
+        return embed;
+    }
+
+    let index = 0;
+    const message = await msg.reply({ embeds: [await make_embed(index)] });
+    await message.react("🔺");
+    await message.react("🔻");
+    await message.react("🔄");
+    await message.react("✔️");
+    await message.react("❌");
+
+    // Collect reactions
+    const Collector = message.createReactionCollector({
+        filter: (reaction, user) => !user.bot && ['✔️', '❌', '🔺', '🔻', '🔄'].includes(reaction.emoji.name),
+        time: 1200000,
+        dispose: true,
+    });
+    // On reaction add
+    Collector.on('collect', async reaction => {
+        switch(reaction.emoji.name) {
+            case '🔺':
+                index = (index + Object.keys(settings).length - 1) % Object.keys(settings).length;
+                message.edit({ embeds: [await make_embed(index)] })
+                break;
+            case '🔻':
+                index = (index + 1) % Object.keys(settings).length;
+                message.edit({ embeds: [await make_embed(index)] })
+                break;
+        }
+    });
+
+    // On reaction remove
+    Collector.on('remove', async reaction => {
+    });
+
+    // At end of 20 minutes update database
+    Collector.on("end", async () => {
     });
 }

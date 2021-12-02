@@ -4,7 +4,6 @@ const CachedPosts: { [key: string]: Post[] } = {};
 
 export function get_post(subreddit: string, after: number): Post {
     if(!(subreddit in CachedPosts)) return undefined;
-
     return CachedPosts[subreddit].find(post => after < post.time);
 }
 

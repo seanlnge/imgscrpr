@@ -36,6 +36,7 @@ export async function ScrapeFromSubreddit(id: string, subreddit: string): Promis
 
     // Look through reddit
     let posts = await Reddit.get_posts(subreddit, sub ? sub.previous_post_utc : 0);
+    if(typeof posts == "string") return;
     posts = posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
     if(!posts.length) return undefined;
 
@@ -69,8 +70,8 @@ export async function ScrapeFromFeed(id: string): Promise<Post> {
 
         // Fallback to reddit post
         let posts = await Reddit.get_posts(sub.subreddit, sub.last);
+        if(typeof posts == "string") continue;
         posts = posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
-        if(!posts.length) continue;
 
         // Cache and finalize
         let post = posts.reduce((a, c) => a.time < c.time ? a : c, posts[0]) as Post;

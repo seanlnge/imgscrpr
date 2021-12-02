@@ -181,7 +181,7 @@ export async function SendSettings(msg: Discord.Message) {
         for(const setting in settings) {
             let name = settings[setting][0];
             if(Object.keys(settings)[index] == setting) name = '**|** ' + name;
-            embed.addField(name, Channel.channel[setting]);
+            embed.addField(name, Channel.channel[setting].toString());
         }
         
         return embed;

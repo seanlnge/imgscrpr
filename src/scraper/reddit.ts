@@ -16,11 +16,11 @@ const ImageTypes = ['jpg', 'png', 'gif', 'jpeg'];
 
 export async function get_posts(subreddit: string, after: number): Promise<Post[] | string> {
     //let reddit_response = await reddit.get(`/r/${subreddit}/hot`, { count: 20 }).catch(err => console.log(err));
-    const reddit_response = (await axios.get(`https://reddit.com/r/${subreddit}/rising.json?limit=4`).catch(err => ({ data: undefined }))).data;
+    const reddit_response = (await axios.get(`https://reddit.com/r/${subreddit}/rising.json?count=20&limit=20`).catch(err => ({ data: undefined }))).data;
     if(!reddit_response) return "That subreddit doesn't exist!";
     
     // Parse list of posts
-    return await reddit_response.data.children.reduce(async (unawaited_posts: Promise<any[]>, post: any, i) => {
+    return await reddit_response.data.children.reduce(async (unawaited_posts: Promise<any[]>, post: any) => {
         const posts = await unawaited_posts;
 
         // Check if post fits basic checks
@@ -66,7 +66,7 @@ export async function get_posts(subreddit: string, after: number): Promise<Post[
         // Handle post if image
         else {
             // Is image hosted on trusted site
-            if(!['reddit', 'imgur'].includes(url.split(/\./g)[1])) {
+            if(!['redd', 'imgur'].includes(url.split(/\./g)[1])) {
                 return posts;
             }
         }

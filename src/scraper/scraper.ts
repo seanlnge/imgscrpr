@@ -46,7 +46,7 @@ export async function ScrapeFromSubreddit(id: string, subreddit: string): Promis
     return post;
 }
 
-export async function ScrapeFromFeed(id: string): Promise<Post> {
+export async function ScrapeFromFeed(id: string): Promise<Post | string> {
     const Channel = await GetChannel(id);
     const ranked_subs = await ranked_subreddits(id);
 
@@ -69,9 +69,16 @@ export async function ScrapeFromFeed(id: string): Promise<Post> {
         if(cached_post) return cached_post;
 
         // Fallback to reddit post
-        let posts = await Reddit.get_posts(sub.subreddit, sub.last);
-        if(typeof posts == "string") continue;
-        posts = posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
+        let unparsed_posts = await Reddit.get_posts(sub.subreddit, sub.last);
+        if(typeof unparsed_posts == "string") return unparsed_posts;
+        let posts = unparsed_posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
+
+        // If all posts gone
+        if(!posts.length) {
+            let unparsed_posts = await Reddit.get_posts(sub.subreddit, posts.slice(-1)[0].id);
+            if(typeof unparsed_posts == "string") return unparsed_posts;
+            posts = unparsed_posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
+        } 
 
         // Cache and finalize
         let post = posts.reduce((a, c) => a.time < c.time ? a : c, posts[0]) as Post;

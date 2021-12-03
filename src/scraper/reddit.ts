@@ -1,6 +1,7 @@
 import * as Reddit from 'reddit';
 import * as Axios from 'axios';
 import Post from '../post';
+import { stringify } from 'querystring';
 
 require('dotenv').config();
 
@@ -14,10 +15,13 @@ const axios = Axios.default;
 
 const ImageTypes = ['jpg', 'png', 'gif', 'jpeg'];
 
-export async function get_posts(subreddit: string, after: number): Promise<Post[] | string> {
+export async function get_posts(subreddit: string, after: number | string): Promise<Post[] | string> {
     //let reddit_response = await reddit.get(`/r/${subreddit}/hot`, { count: 20 }).catch(err => console.log(err));
-    const reddit_response = (await axios.get(`https://reddit.com/r/${subreddit}/rising.json?count=20&limit=20`).catch(err => ({ data: undefined }))).data;
-    if(!reddit_response) return "That subreddit doesn't exist!";
+    const str_after = typeof after == "string" ? '&after=' + after : '';
+    const reddit_response = (await axios.get(`https://reddit.com/r/${subreddit}/rising.json?count=20&limit=20${str_after}`).catch(err =>
+        ({ data: undefined })
+    )).data;
+    if(!reddit_response) return "That subreddit is non-existent or doesn't have media posts!";
     
     // Parse list of posts
     return await reddit_response.data.children.reduce(async (unawaited_posts: Promise<any[]>, post: any) => {
@@ -27,7 +31,7 @@ export async function get_posts(subreddit: string, after: number): Promise<Post[
         let is_image = ImageTypes.includes(post.data.url.split(/[\.\/]/g).slice(-1)[0]);
         let video = post.data.is_video;
         let audio: string = undefined;
-        let timely = post.data.created_utc > after;
+        let timely = typeof after == "number" ? post.data.created_utc > after : 1;
         if(!(is_image || video) || !timely || post.data.stickied) {
             return posts;
         }
@@ -76,6 +80,7 @@ export async function get_posts(subreddit: string, after: number): Promise<Post[
             title: post.data.title,
             subreddit,
             url,
+            id: post.data.id,
             video: post.data.is_video,
             audio,
             nsfw: post.data.over_18,

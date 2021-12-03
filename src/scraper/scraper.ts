@@ -88,6 +88,7 @@ export async function ScrapeFromFeed(id: string): Promise<Post | string> {
         let id = unparsed_posts.slice(-1)[0].id;
         while(!posts.length) {
             let unparsed_posts = await Reddit.get_posts(sub.subreddit, id);
+            console.log(unparsed_posts.length, id);
             if(unparsed_posts.length == 0) return undefined;
             if(typeof unparsed_posts == "string") return unparsed_posts;
             

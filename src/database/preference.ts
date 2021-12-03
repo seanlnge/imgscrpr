@@ -65,13 +65,14 @@ Preference.prototype.initialize = (subreddits: string[] = [
             premium: false,
             allow_nsfw: false,
             allow_video: true,
-            users: true,
-            admins: [],
+            voters: true,
+            administrators: { users: [], roles: [] },
             commands: {
                 'send': 'send',
                 'reset': 'reset',
                 'add': 'add',
                 'remove': 'remove',
+                'settings': 'settings'
             },
             reactions: {
                 '🟢': 1,
@@ -87,8 +88,8 @@ export type ChannelPreference = {
     premium: boolean,
     allow_nsfw: boolean,
     allow_video: boolean,
-    users: boolean | string[],
-    admins: boolean | string[],
+    voters: boolean | { users: string[], roles: string[] },
+    administrators: { users: string[], roles: string[] },
     commands: { [key: string]: string },
     reactions: { [key: string]: number }
 }
@@ -118,7 +119,7 @@ async function initialize_channel(id: string) {
     }
 
     // Push channel preference
-    parsed_subreddits.push({ preference: true, ...WorkingPreferences[id].channel });
+    parsed_subreddits.push({ is_preference: true, ...WorkingPreferences[id].channel });
     await channel(id).insertMany(parsed_subreddits);
 }
 
@@ -126,9 +127,9 @@ export async function GetChannel(id: string): Promise<Preference> {
     if(id in WorkingPreferences) return WorkingPreferences[id];
 
     // Find channel preference in db
-    const channelPref = await channel(id).findOne({ preference: { $eq: true } });
+    const channelPref = await channel(id).findOne({ is_preference: { $eq: true } });
     if(channelPref) {
-        delete channelPref.preference;
+        delete channelPref.is_preference;
 
         // Parse subreddits to insert into db
         const subreddits = {};

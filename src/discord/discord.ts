@@ -3,7 +3,9 @@ import { GetChannel } from '../database/preference';
 require('dotenv').config();
 
 import { SendHelpMessage, SendPremiumMessage } from './commands/static';
-import { AddSubreddit, RemoveSubreddit, Reset, SendPost, SendSettings } from './commands/dynamic';
+import { AddSubreddit, RemoveSubreddit, Reset } from './commands/dynamic/preference';
+import { SendPost } from './commands/dynamic/send';
+import { SendSettings } from './commands/dynamic/settings';
 
 const Client = new Discord.Client({
     intents: [
@@ -32,14 +34,22 @@ Client.on("messageCreate", async msg => {
     // Base commands
     if(["help", "info"].includes(command)) await SendHelpMessage(msg);
     if(["upgrade", "premium"].includes(command)) await SendPremiumMessage(msg);
-    if(["settings"].includes(command)) await SendSettings(msg);
 
     // Premium customizable commands
     const Channel = await GetChannel(msg.channelId);
+
+    if(!Channel.channel.administrators.users.includes(msg.author.id)
+    && !msg.member.roles.cache.hasAny(...Channel.channel.administrators.roles)
+    && !msg.member.permissions.has("ADMINISTRATOR")) {
+        await msg.reply("You don't have valid administrator permissions!");
+        return;
+    }
+
     if(Channel.channel.commands["add"] == command) await AddSubreddit(msg, options);
     if(Channel.channel.commands["remove"] == command) await RemoveSubreddit(msg, options);
     if(Channel.channel.commands["send"] == command) await SendPost(msg, options);
     if(Channel.channel.commands["reset"] == command) await Reset(msg);
+    if(Channel.channel.commands["settings"] == command) await SendSettings(msg);
 });
 
 export function login() {

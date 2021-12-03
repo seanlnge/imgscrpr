@@ -6,7 +6,7 @@ const HelpMessage = {
     "reset": ["`i.~`", "Reset subreddit preferences"],
     "add": ["`i.~ subreddit`", "Add a subreddit to top of feed"],
     "remove": ["`i.~ subreddit`", "Remove a subreddit from top of feed"],
-    //"list": ["`i.~ {top|[subreddit]}`", "List data for "]
+    "settings": ["`i.~`", "Open up the settings panel"]
 };
 
 
@@ -31,7 +31,8 @@ export async function SendHelpMessage(msg: Discord.Message) {
 export async function SendPremiumMessage(msg: Discord.Message) {
     const Channel = await GetChannel(msg.channelId);
     if(Channel.channel.premium) {
-        msg.reply("Thanks for buying it!")
+        msg.reply("Thanks for buying it!");
+        return;
     }
     
     const embed = new Discord.MessageEmbed();
@@ -44,7 +45,7 @@ export async function SendPremiumMessage(msg: Discord.Message) {
     embed.addField("Customizable Votes", "Gives the ability to edit the upvote/downvote reactions, as well as adding new ones");
     embed.addField("Change Commands", "Allows you to not only rename commands, but also to make new ones");
     embed.setFooter("Although buying premium enhances your channel's experience as well as supporting us, it isn't necessary, and we will still appreciate you regardless");
-    await msg.reply({ embeds: [embed] });
 
     Channel.channel.premium = true;
+    return await msg.reply({ embeds: [embed] });
 }

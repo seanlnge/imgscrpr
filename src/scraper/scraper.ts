@@ -26,7 +26,7 @@ async function ranked_subreddits(id: string): Promise<{ subreddit: string, score
     return (await Promise.all(parsed_subs)).sort((a, b) => b.score - a.score);
 }
 
-export async function ScrapeFromSubreddit(id: string, subreddit: string): Promise<Post> {
+export async function ScrapeFromSubreddit(id: string, subreddit: string): Promise<Post | string> {
     const Channel = await GetChannel(id);
     const sub = Channel.subreddits[subreddit];
 
@@ -35,10 +35,14 @@ export async function ScrapeFromSubreddit(id: string, subreddit: string): Promis
     if(cached_post) return cached_post;
 
     // Look through reddit
-    let posts = await Reddit.get_posts(subreddit, sub ? sub.previous_post_utc : 0);
-    if(typeof posts == "string") return;
-    posts = posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
-    if(!posts.length) return undefined;
+    let unparsed_posts = await Reddit.get_posts(subreddit, '');
+    if(!unparsed_posts.length) return undefined;
+    if(typeof unparsed_posts == "string") return unparsed_posts;
+    let posts = unparsed_posts.filter(a =>
+        (!a.nsfw || Channel.channel.allow_nsfw) && 
+        (!a.video || Channel.channel.allow_video) &&
+        a.time > sub.previous_post_utc
+    );
 
     // Cache and finalize
     let post = posts.reduce((a, c) => a.time < c.time ? a : c, posts[0]) as Post;
@@ -69,15 +73,30 @@ export async function ScrapeFromFeed(id: string): Promise<Post | string> {
         if(cached_post) return cached_post;
 
         // Fallback to reddit post
-        let unparsed_posts = await Reddit.get_posts(sub.subreddit, sub.last);
+        let unparsed_posts = await Reddit.get_posts(sub.subreddit, '');
         if(typeof unparsed_posts == "string") return unparsed_posts;
-        let posts = unparsed_posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
+        if(unparsed_posts.length == 0) return undefined;
+
+        // Parse posts
+        let posts = unparsed_posts.filter(a =>
+            (!a.nsfw || Channel.channel.allow_nsfw) && 
+            (!a.video || Channel.channel.allow_video) &&
+            a.time > sub.last
+        );
 
         // If all posts gone
-        if(!posts.length) {
-            let unparsed_posts = await Reddit.get_posts(sub.subreddit, posts.slice(-1)[0].id);
+        let id = unparsed_posts.slice(-1)[0].id;
+        while(!posts.length) {
+            let unparsed_posts = await Reddit.get_posts(sub.subreddit, id);
+            if(unparsed_posts.length == 0) return undefined;
             if(typeof unparsed_posts == "string") return unparsed_posts;
-            posts = unparsed_posts.filter(a => !a.nsfw || Channel.channel.allow_nsfw);
+            
+            // Parse posts
+            posts = unparsed_posts.filter(a =>
+                (!a.nsfw || Channel.channel.allow_nsfw)
+                && (!a.video || Channel.channel.allow_video)
+            );
+            if(!posts.length) id = unparsed_posts.slice(-1)[0].id;
         } 
 
         // Cache and finalize

@@ -15,9 +15,9 @@ const axios = Axios.default;
 
 const ImageTypes = ['jpg', 'png', 'gif', 'jpeg'];
 
-export async function get_posts(subreddit: string, after: number | string): Promise<Post[] | string> {
+export async function get_posts(subreddit: string, after: string): Promise<Post[] | string> {
     //let reddit_response = await reddit.get(`/r/${subreddit}/hot`, { count: 20 }).catch(err => console.log(err));
-    const str_after = typeof after == "string" ? '&after=' + after : '';
+    const str_after = after ? '&after=' + after : '';
     const reddit_response = (await axios.get(`https://reddit.com/r/${subreddit}/rising.json?count=20&limit=20${str_after}`).catch(err =>
         ({ data: undefined })
     )).data;
@@ -31,8 +31,7 @@ export async function get_posts(subreddit: string, after: number | string): Prom
         let is_image = ImageTypes.includes(post.data.url.split(/[\.\/]/g).slice(-1)[0]);
         let video = post.data.is_video;
         let audio: string = undefined;
-        let timely = typeof after == "number" ? post.data.created_utc > after : 1;
-        if(!(is_image || video) || !timely || post.data.stickied) {
+        if(!(is_image || video) || post.data.stickied) {
             return posts;
         }
 
@@ -76,12 +75,11 @@ export async function get_posts(subreddit: string, after: number | string): Prom
         }
 
         // Parse post and return
-        console.log(post.data);
         posts.push({
             title: post.data.title,
             subreddit,
             url,
-            id: post.data.id,
+            id: post.data.name,
             video: post.data.is_video,
             audio,
             nsfw: post.data.over_18,

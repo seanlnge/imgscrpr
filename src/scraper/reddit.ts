@@ -76,6 +76,7 @@ export async function get_posts(subreddit: string, after: number | string): Prom
         }
 
         // Parse post and return
+        console.log(post.data);
         posts.push({
             title: post.data.title,
             subreddit,

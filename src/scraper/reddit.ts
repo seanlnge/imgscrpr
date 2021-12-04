@@ -71,6 +71,8 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
 
             PostObject.url = url;
         }
+        
+        if(!AllowedFileTypes.includes(PostData.url.split(/\./g).slice(-1)[0])) return Acc;
 
         Acc.push(PostObject);
         return Acc;

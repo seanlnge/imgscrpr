@@ -1,90 +1,84 @@
 import * as Reddit from 'reddit';
 import * as Axios from 'axios';
 import Post from '../post';
-import { stringify } from 'querystring';
+import { ChannelPreference } from '../database/preference';
 
 require('dotenv').config();
-
+/*
 const reddit = new Reddit({
-    //username: process.env.REDDIT_USERNAME,
-    //password: process.env.REDDIT_PASSWORD,
-    //appId: process.env.ID,
-    //appSecret: process.env.SECRET
-});
+    username: process.env.REDDIT_USERNAME,
+    password: process.env.REDDIT_PASSWORD,
+    appId: process.env.ID,
+    appSecret: process.env.SECRET
+});*/
 const axios = Axios.default;
 
-const ImageTypes = ['jpg', 'png', 'gif', 'jpeg'];
+const AllowedFileTypes = ['jpg', 'png', 'gif', 'jpeg', 'webp', 'mp4', 'mov', 'webm'];
+const TrustedDomains = ['v.redd.it', 'i.redd.it', 'i.imgur.com', 'tenor.com'];
 
-export async function get_posts(subreddit: string, after: string): Promise<Post[] | string> {
-    //let reddit_response = await reddit.get(`/r/${subreddit}/hot`, { count: 20 }).catch(err => console.log(err));
-    const str_after = after ? '&after=' + after : '';
-    const reddit_response = (await axios.get(`https://reddit.com/r/${subreddit}/rising.json?count=20&limit=20${str_after}`).catch(err =>
-        ({ data: undefined })
-    )).data;
-    if(!reddit_response) return "That subreddit is non-existent or doesn't have media posts!";
+/**
+ * Get list of posts, as well as final post in feed to iterate searches
+ * @param subreddit Subreddit name to search
+ * @param after Post in feed to start search at
+ * @param search_videos Search for videos
+ * @returns [List of valid posts, Final post in feed]
+ */
+export async function GetPosts(preference: ChannelPreference, subreddit: string, after: string): Promise<{ posts: Post[], after: string, error: string }> {
+    const URL = `https://reddit.com/r/${subreddit}/top.json?t=week&limit=&${preference.allow_video ? '20' : '100'}${after ? '&after='+after : ''}`;
+    const RedditResponse = await axios.get(URL).then(res => res.data).catch(() => undefined);
+
+    if(!RedditResponse) return { posts: [], after: undefined, error: 'Internal error' };
+    if(!RedditResponse.data.dist) return { posts: [], after: undefined, error: 'That subreddit doesn\'t exist!' };
     
-    // Parse list of posts
-    return await reddit_response.data.children.reduce(async (unawaited_posts: Promise<any[]>, post: any) => {
-        const posts = await unawaited_posts;
-
-        // Check if post fits basic checks
-        let is_image = ImageTypes.includes(post.data.url.split(/[\.\/]/g).slice(-1)[0]);
-        let video = post.data.is_video;
-        let audio: string = undefined;
-        if(!(is_image || video) || post.data.stickied) {
-            return posts;
+    const Posts = RedditResponse.data.children;
+    const ParsedPosts = await Posts.reduce(async (acc_promise: Promise<Post[]>, post: { data: any }) => {
+        const PostData = post.data;
+        const Acc = await acc_promise;
+        let allowed_video = PostData.is_video ? preference.allow_video : true;
+        let allowed_nsfw = PostData.over_18 ? preference.allow_nsfw : true;
+        let allowed_domain = TrustedDomains.includes(PostData.domain);
+        if(PostData.stickied || !allowed_video || !allowed_nsfw || !allowed_domain) {
+            return Acc;
         }
+        
+        const PostObject: Post = {
+            title: PostData.title,
+            subreddit: PostData.subreddit,
+            video: PostData.is_video,
+            nsfw: PostData.over_18,
+            time: PostData.created_utc,
+            url: PostData.url
+        };
 
-        let url = post.data.url;
+        if(PostData.is_video) {
+            let url = PostData.media.reddit_video.fallback_url;
 
-        // Handle post if video
-        if(video) {
-            url = post.data.media.reddit_video.fallback_url;
-    
-            // Is fallback url valid
-            if(!url.split(/[\.\/]/g).slice(-1)[0].includes('mp4')) {
-                return posts;
-            }
-            
-            // Is video length discord-send-able
-            let size: string;
-            for(size of ['1080', '480', '360', '240', 'end']) {
-                if(size == 'end') return posts;
+            // Test image qualities to find highest discord sendable
+            for(let size of ['480', '240', 'end']) {
+                if(size == 'end') return Acc;
 
-                // Lower video size
                 let start = url.indexOf('DASH_') + 5;
                 let end = url.indexOf('.mp4');
                 url = url.slice(0, start) + size + url.slice(end);
 
                 // Is current video length good
+                let startt = Date.now();
                 const length = await axios.head(url).then(res => parseInt(res.headers['content-length'])).catch(() => undefined);
+                console.log(Date.now() - startt)
                 if(!length) continue;
-                
-                // Is good
                 if(length <= 8000000) break;
             }
-            audio = url.replace(size, 'audio');
-        } 
-        
-        // Handle post if image
-        else {
-            // Is image hosted on trusted site
-            if(!['redd', 'imgur'].includes(url.split(/\./g)[1])) {
-                return posts;
-            }
+
+            PostObject.url = url;
         }
 
-        // Parse post and return
-        posts.push({
-            title: post.data.title,
-            subreddit,
-            url,
-            id: post.data.name,
-            video: post.data.is_video,
-            audio,
-            nsfw: post.data.over_18,
-            time: parseInt(post.data.created_utc)
-        });
-        return posts;
+        Acc.push(PostObject);
+        return Acc;
     }, Promise.resolve([]));
+
+    return {
+        posts: ParsedPosts,
+        after: RedditResponse.data.after,
+        error: undefined
+    }
 }

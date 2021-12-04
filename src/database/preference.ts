@@ -177,7 +177,7 @@ export async function UpdateChannelPreference(id: string) {
  * @param id Discord channel ID
  */
 export async function ResetChannel(id: string) {
-    await channel(id).deleteMany({});
+    await channel(id).deleteMany({ subreddit: { $exists: true }});
     delete WorkingPreferences[id];
 }
    

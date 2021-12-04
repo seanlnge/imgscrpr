@@ -18,7 +18,7 @@ const settings = {
             filter: (reaction) => reaction.emoji.name == '◀️'
         }).on('collect', () => message.delete());
     }],
-    "save": ["Save", "Save setting changes", async (response: Discord.Message) => {
+    "done": ["Done", "Finalize setting changes", async (response: Discord.Message) => {
         await UpdateChannelPreference(response.channelId);
         await response.delete();
     }]

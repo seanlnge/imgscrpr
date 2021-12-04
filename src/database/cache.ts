@@ -10,13 +10,13 @@ export function get_post(subreddit: string, after: number): Post {
 export function add_posts(subreddit: string, posts: Post[]) {
     // Create subreddit if non-existent
     if(!(subreddit in CachedPosts)) {
-        CachedPosts[subreddit] = posts;
+        CachedPosts[subreddit] = posts.sort((a, b) => a.time - b.time);
         return;
     }
 
     // Verify cached data is not too large
     let sub = CachedPosts[subreddit];
-    posts.sort((a, b) => a.time - b.time);
     sub.push(...posts);
+    sub = sub.sort((a, b) => a.time - b.time);
     if(sub.length > 500) sub.splice(0, sub.length - 500);
 }

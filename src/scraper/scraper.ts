@@ -50,7 +50,7 @@ export async function ScrapeFromFeed(id: string): Promise<Post | string> {
     let subreddit_set: Set<string> = new Set();
     for(let sub in Channel.subreddits) {
         subreddit_set.add(sub);
-        SubredditConnections(sub).connections.forEach((a: string) => subreddit_set.add(a));
+        (await SubredditConnections(sub)).connections.forEach((a: string) => subreddit_set.add(a));
     }
     let subreddits = Array.from(subreddit_set);
 
@@ -68,5 +68,5 @@ export async function ScrapeFromFeed(id: string): Promise<Post | string> {
 
     let random = ranked_subs.findIndex(a => 0 >= (random_float -= a.score));
     if(random == -1) random = 0;
-    return ScrapeFromSubreddit(id, ranked_subs[random].subreddit);
+    return await ScrapeFromSubreddit(id, ranked_subs[random].subreddit);
 }

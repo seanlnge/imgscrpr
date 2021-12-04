@@ -178,7 +178,9 @@ export async function UpdateChannelPreference(id: string) {
  */
 export async function ResetChannel(id: string) {
     await channel(id).deleteMany({ subreddit: { $exists: true }});
-    delete WorkingPreferences[id];
+    let channel_preference = WorkingPreferences[id].channel;
+    await initialize_channel(id);
+    WorkingPreferences[id].channel = channel_preference;
 }
    
 export async function connect_db() { await client.connect() };

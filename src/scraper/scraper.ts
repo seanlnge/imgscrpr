@@ -67,5 +67,6 @@ export async function ScrapeFromFeed(id: string): Promise<Post | string> {
     let random_float = Math.random() * total;
 
     let random = ranked_subs.findIndex(a => 0 >= (random_float -= a.score));
+    if(random == -1) random = 0;
     return ScrapeFromSubreddit(id, ranked_subs[random].subreddit);
 }

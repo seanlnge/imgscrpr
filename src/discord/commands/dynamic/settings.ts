@@ -12,7 +12,7 @@ const settings = {
         Channel.channel.allow_video = !Channel.channel.allow_video;
     }],
     "premium": ["Account Upgraded", "Support us through buying premium", async (response: Discord.Message) => {
-        const message = await SendPremiumMessage(response)
+        const message = await SendPremiumMessage(response);
         await message.react('◀️');
         message.createReactionCollector({
             filter: (reaction) => reaction.emoji.name == '◀️'
@@ -53,15 +53,17 @@ export async function SendSettings(msg: Discord.Message) {
     const response = await msg.channel.send({ embeds: [await make_embed(index)] });
     await response.react("🔺");
     await response.react("🔻");
-    await response.react("🔄");
+    await response.react("↔️");
     // Collect reactions
     const Collector = response.createReactionCollector({
-        filter: (reaction, user) => !user.bot && ['🔺', '🔻', '🔄'].includes(reaction.emoji.name),
+        filter: (reaction, user) => !user.bot && ['🔺', '🔻', '↔️'].includes(reaction.emoji.name),
         time: 120000,
         dispose: true,
     });
+
     // On reaction add
     Collector.on('collect', async (reaction, user) => {
+        // Move to different commands
         if(['🔺', '🔻'].includes(reaction.emoji.name)) {
             if(reaction.emoji.name == '🔺') {
                 // Make sure index is positive
@@ -74,8 +76,17 @@ export async function SendSettings(msg: Discord.Message) {
             return;
         }
 
-        await settings[Object.keys(settings)[index]][2](response);
-        await response.edit({ embeds: [await make_embed(index)] }).catch(() => /* ok? dont care? */{});
+        // User must be admin to allow for changes
+        if(
+            Channel.channel.administrators.users.includes(msg.author.id)
+            || msg.member.roles.cache.hasAny(...Channel.channel.administrators.roles)
+            || msg.member.permissions.has("ADMINISTRATOR")
+        ) {
+            await settings[Object.keys(settings)[index]][2](response);
+            await response.edit({ embeds: [await make_embed(index)] }).catch(() => /* ok? dont care? */{});
+        }
+
+        // Remove reaction to allow for repeated reactions
         await response.reactions.resolve(reaction.emoji.name).users.remove(user.id).catch(() => /* ok? dont care? */{});
     });
 

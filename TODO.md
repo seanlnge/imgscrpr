@@ -1,4 +1,3 @@
 # To-Do
 ***
-* Administrators
-* Users
+* PREMIUM

@@ -6,6 +6,8 @@ import { SendHelpMessage, SendPremiumMessage } from './commands/static';
 import { AddSubreddit, RemoveSubreddit, Reset } from './commands/dynamic/preference';
 import { SendPost } from './commands/dynamic/send';
 import { SendSettings } from './commands/dynamic/settings';
+import { Administrators } from './commands/dynamic/permissions';
+import { Admin } from 'mongodb';
 
 const Client = new Discord.Client({
     intents: [
@@ -50,6 +52,7 @@ Client.on("messageCreate", async msg => {
     if(Channel.channel.commands["send"] == command) await SendPost(msg, options);
     if(Channel.channel.commands["reset"] == command) await Reset(msg);
     if(Channel.channel.commands["settings"] == command) await SendSettings(msg);
+    if(Channel.channel.commands["admin"] == command) await Administrators(msg, options); 
 });
 
 export function login() {

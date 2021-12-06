@@ -72,7 +72,8 @@ Preference.prototype.initialize = (subreddits: string[] = [
                 'reset': 'reset',
                 'add': 'add',
                 'remove': 'remove',
-                'settings': 'settings'
+                'settings': 'settings',
+                'admin': 'admin'
             },
             reactions: {
                 '🟢': 1,
@@ -88,7 +89,6 @@ export type ChannelPreference = {
     premium: boolean,
     allow_nsfw: boolean,
     allow_video: boolean,
-    voters: boolean | { users: string[], roles: string[] },
     administrators: { users: string[], roles: string[] },
     commands: { [key: string]: string },
     reactions: { [key: string]: number }

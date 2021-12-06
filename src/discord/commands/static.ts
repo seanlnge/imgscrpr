@@ -6,7 +6,8 @@ const HelpMessage = {
     "reset": ["`i.~`", "Reset subreddit preferences"],
     "add": ["`i.~ subreddit`", "Add a subreddit to top of feed"],
     "remove": ["`i.~ subreddit`", "Remove a subreddit from top of feed"],
-    "settings": ["`i.~`", "Open up the settings panel"]
+    "settings": ["`i.~`", "Open up the settings panel"],
+    "admin": ["`i.~ 'add'|'remove' user|role", "Give/revoke administrator access to user/role"]
 };
 
 
@@ -15,7 +16,7 @@ export async function SendHelpMessage(msg: Discord.Message) {
     const embed = new Discord.MessageEmbed();
     embed.setTitle("Imgscrpr Commands");
     embed.setColor("#d62e00");
-    embed.setDescription("Mobile typing sucks, so Imgscrpr responds to both uppercase and lowercase, as well as accepting extra spaces ('I. help' works). Brackets mean that the parameter is optional, but otherwise it is necessary\n")
+    embed.setDescription("Mobile typing sucks, so Imgscrpr responds to both uppercase and lowercase, as well as accepting extra spaces ('I. help' works). Brackets mean that the parameter is optional, but otherwise it is necessary, and the '|' symbols means to choose either side\n")
     for(let command in HelpMessage) {
         let data = HelpMessage[command];
         embed.addField(
@@ -31,8 +32,7 @@ export async function SendHelpMessage(msg: Discord.Message) {
 export async function SendPremiumMessage(msg: Discord.Message) {
     const Channel = await GetChannel(msg.channelId);
     if(Channel.channel.premium) {
-        msg.reply("Thanks for buying it!");
-        return;
+        return await msg.reply("Thanks for buying it!");
     }
     
     const embed = new Discord.MessageEmbed();

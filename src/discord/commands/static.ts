@@ -24,6 +24,7 @@ export async function SendHelpMessage(msg: Discord.Message) {
             data[1]
         );
     }
+    embed.addField("i.premium", "Look at the features that the premium subscription has to offer");
     embed.addField('\n⠀', '[Add Imgscrpr to your Discord server!](https://discord.com/api/oauth2/authorize?client_id=904018497657532447&permissions=532576463936&scope=bot)');
     await msg.reply({ embeds: [embed] });
 }
@@ -46,6 +47,5 @@ export async function SendPremiumMessage(msg: Discord.Message) {
     embed.addField("Change Commands", "Allows you to not only rename commands, but also to make new ones");
     embed.setFooter("Although buying premium enhances your channel's experience as well as supporting us, it isn't necessary, and we will still appreciate you regardless");
 
-    Channel.channel.premium = true;
     return await msg.reply({ embeds: [embed] });
 }

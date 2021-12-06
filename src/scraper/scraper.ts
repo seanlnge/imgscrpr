@@ -21,14 +21,25 @@ export async function ScrapeFromSubreddit(id: string, subreddit: string): Promis
     // Look through reddit
     let reddit_response = await Reddit.GetPosts(Channel.channel, subreddit, undefined);
     if(reddit_response.error) return reddit_response.error;
-    let posts = reddit_response.posts.filter(a => a.time > (sub ? sub.previous_post_utc : 0));
+
+    // Has to have been posted 2 hours - 24 hours ago to increase quality
+    let posts = reddit_response.posts.filter(a => 
+        a.time > (sub ? sub.previous_post_utc : 0)
+        || Date.now()/1000-a.time < 7200
+        || Date.now()/1000-a.time > 86400
+    );
     let after = reddit_response.after;
     
     // Find new posts given others are old
     while(!posts.length) {
         let reddit_response = await Reddit.GetPosts(Channel.channel, subreddit, after);
+        if(!reddit_response.posts.length) return "No posts from this subreddit right now!";
         if(reddit_response.error) return reddit_response.error;
-        posts = reddit_response.posts.filter(a => a.time > (sub ? sub.previous_post_utc : 0));
+        posts = reddit_response.posts.filter(a =>
+            a.time > (sub ? sub.previous_post_utc : 0)
+            || Date.now()/1000-a.time < 7200
+            || Date.now()/1000-a.time > 86400
+        );
         after = reddit_response.after;
     }
 
@@ -59,14 +70,28 @@ export async function ScrapeFromFeed(id: string): Promise<Post | string> {
         subreddit: sub,
         score: await SubredditScore(id, sub) + Math.random() / 20
     }));
-    const ranked_subs = (await Promise.all(parsed_subs)).sort((a, b) => b.score - a.score);
+    let ranked_subs = (await Promise.all(parsed_subs)).sort((a, b) => b.score - a.score);
 
     // Gives a weighted ratio for picking top subs
-    let amount = 5;
+    let amount = Math.min(8, parsed_subs.length);
     let total = ranked_subs.slice(0, amount).reduce((a, c) => a + c.score, 0);
-    let random_float = Math.random() * total;
 
-    let random = ranked_subs.findIndex(a => 0 >= (random_float -= a.score));
-    if(random == -1) random = 0;
-    return await ScrapeFromSubreddit(id, ranked_subs[random].subreddit);
+    for(let i=0; i<amount; i++) {
+        // Calculate random subreddit index weighted towards sub scores
+        let random_float = Math.random() * total;
+        let random = ranked_subs.findIndex(a => 0 >= (random_float -= a.score));
+
+        let post = await ScrapeFromSubreddit(id, ranked_subs[random].subreddit);
+
+        if(typeof post == "string") {
+            // Removes duplicate scrapes
+            total -= ranked_subs[random].score;
+            ranked_subs.splice(random, 1);
+            continue;
+        };
+
+        return post;
+    }
+    
+    return "Unfortunately there was a problem";
 }

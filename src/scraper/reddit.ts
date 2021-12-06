@@ -1,16 +1,8 @@
-import * as Reddit from 'reddit';
 import * as Axios from 'axios';
 import Post from '../post';
 import { ChannelPreference } from '../database/preference';
-
 require('dotenv').config();
-/*
-const reddit = new Reddit({
-    username: process.env.REDDIT_USERNAME,
-    password: process.env.REDDIT_PASSWORD,
-    appId: process.env.ID,
-    appSecret: process.env.SECRET
-});*/
+
 const axios = Axios.default;
 
 const AllowedFileTypes = ['jpg', 'png', 'gif', 'jpeg', 'webp', 'mp4', 'mov', 'webm'];
@@ -24,10 +16,16 @@ const TrustedDomains = ['v.redd.it', 'i.redd.it', 'i.imgur.com', 'tenor.com'];
  * @returns [List of valid posts, Final post in feed]
  */
 export async function GetPosts(preference: ChannelPreference, subreddit: string, after: string): Promise<{ posts: Post[], after: string, error: string }> {
-    const URL = `https://reddit.com/r/${subreddit}/top.json?t=week&limit=&${preference.allow_video ? '20' : '100'}${after ? '&after='+after : ''}`;
-    const RedditResponse = await axios.get(URL).then(res => res.data).catch(() => undefined);
+    const URL = `https://reddit.com/r/${subreddit}/hot.json?limit=${preference.allow_video ? '20' : '100'}${after ? '&after='+after : ''}`;
+    const RedditResponse = await axios.get(URL).then(res => res.data).catch(err => {
+        switch(err.reason) {
+            case 'private': return 'That subreddit is private!';
+            case 'banned': return 'That subreddit has been banned!';
+            default: return 'We\'ve had an internal error! Try again';
+        }
+    });
 
-    if(!RedditResponse) return { posts: [], after: undefined, error: 'Internal error' };
+    if(typeof RedditResponse == "string") return { posts: [], after: undefined, error: RedditResponse  };
     if(!RedditResponse.data.dist) return { posts: [], after: undefined, error: 'That subreddit doesn\'t exist!' };
     
     const Posts = RedditResponse.data.children;
@@ -62,9 +60,7 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
                 url = url.slice(0, start) + size + url.slice(end);
 
                 // Is current video length good
-                let startt = Date.now();
                 const length = await axios.head(url).then(res => parseInt(res.headers['content-length'])).catch(() => undefined);
-                console.log(Date.now() - startt)
                 if(!length) continue;
                 if(length <= 8000000) break;
             }

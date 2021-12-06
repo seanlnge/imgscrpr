@@ -7,7 +7,7 @@ const HelpMessage = {
     "add": ["`i.~ subreddit`", "Add a subreddit to top of feed"],
     "remove": ["`i.~ subreddit`", "Remove a subreddit from top of feed"],
     "settings": ["`i.~`", "Open up the settings panel"],
-    "admin": ["`i.~ 'add'|'remove' user|role", "Give/revoke administrator access to user/role"]
+    "admin": ["`i.~ 'add'|'remove' user|role`", "Give/revoke administrator access to user/role"]
 };
 
 
@@ -24,7 +24,7 @@ export async function SendHelpMessage(msg: Discord.Message) {
             data[1]
         );
     }
-    embed.addField("i.premium", "Look at the features that the premium subscription has to offer");
+    embed.addField("`i.premium`", "Look at the features that the premium subscription has to offer");
     embed.addField('\n⠀', '[Add Imgscrpr to your Discord server!](https://discord.com/api/oauth2/authorize?client_id=904018497657532447&permissions=532576463936&scope=bot)');
     await msg.reply({ embeds: [embed] });
 }

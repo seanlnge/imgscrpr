@@ -4,8 +4,6 @@ import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../../scraper/scraper';
 import Post from '../../../post';
 import { UpdateConnections } from '../../../scraper/subreddits';
 
-const WaitTimeMs = 60000;
-
 /**
  * Send personalized post with option for specific subreddit
  * @param msg Discord message object
@@ -14,13 +12,11 @@ const WaitTimeMs = 60000;
  */
 export async function SendPost(msg: Discord.Message, options: string[]) {
     const Channel = await GetChannel(msg.channelId);
-    if(
-        Date.now() - Channel.channel.last_accessed < WaitTimeMs
-        && !Channel.channel.premium
-    ) {
+    const WaitTimeMs = Channel.channel.premium ? 5000 : 300000;
+
+    if(Date.now() - Channel.channel.last_accessed < WaitTimeMs) {
         let time_left = WaitTimeMs - (Date.now() - Channel.channel.last_accessed);
-        const embed = new Discord.MessageEmbed();
-        embed.setColor("#d62e00");
+        const embed = new Discord.MessageEmbed({ color: "#d62e00" });
         embed.description = `Thanks for recognition, but API calls are expensive\n\n`
                           + `Please wait **${Math.ceil(time_left/1000)} seconds** or upgrade to our premium version`;
         await msg.channel.send({ embeds: [embed] });
@@ -73,6 +69,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     Subreddit.previous_post_utc = Post.time;
     Subreddit.last_accessed = Date.now();
     Channel.channel.last_accessed = Date.now();
+    Channel.statistics.posts++;
     
     // Collect reactions
     const Collector = Message.createReactionCollector({
@@ -90,6 +87,8 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         let score = Channel.channel.reactions[reaction.emoji.name];
         if(!score) return;
 
+        Channel.statistics.votes++;
+        Channel.statistics.score += score;
         Subreddit.score += score;
         Subreddit.total++;
     });
@@ -99,6 +98,8 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         let score = Channel.channel.reactions[reaction.emoji.name];
         if(!score) return;
 
+        Channel.statistics.votes--;
+        Channel.statistics.score -= score;
         Subreddit.score -= score;
         Subreddit.total--;
     });

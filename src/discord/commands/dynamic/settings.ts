@@ -1,4 +1,5 @@
 import * as Discord from 'discord.js'
+import { MongoServerClosedError } from 'mongodb';
 import { GetChannel, UpdateChannelPreference } from '../../../database/preference'
 import { SendPremiumMessage } from '.././static';
 
@@ -12,7 +13,9 @@ const settings = {
         Channel.channel.allow_video = !Channel.channel.allow_video;
     }],
     "premium": ["Account Upgraded", "Support us through buying premium", async (response: Discord.Message) => {
-        const message = await SendPremiumMessage(response);
+        const message = await SendPremiumMessage(response, []);
+        if(!message) return;
+        
         await message.react('◀️');
         message.createReactionCollector({
             filter: (reaction) => reaction.emoji.name == '◀️'
@@ -32,9 +35,8 @@ export async function SendSettings(msg: Discord.Message) {
     const Channel = await GetChannel(msg.channelId);
 
     const make_embed = async (index: number) => {
-        const embed = new Discord.MessageEmbed();
+        const embed = new Discord.MessageEmbed({ color: "#d62e00" });
         embed.setTitle("Imgscrpr Settings");
-        embed.setColor("#d62e00");
 
         for(const setting in settings) {
             let name = settings[setting][0];

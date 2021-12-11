@@ -7,7 +7,8 @@ import { AddSubreddit, RemoveSubreddit, Reset } from './commands/dynamic/prefere
 import { SendPost } from './commands/dynamic/send';
 import { SendSettings } from './commands/dynamic/settings';
 import { Administrators } from './commands/dynamic/permissions';
-import { Admin } from 'mongodb';
+import { IsPremium, Stats } from './commands/dynamic/premium';
+import { getHeapStatistics } from 'v8';
 
 const Client = new Discord.Client({
     intents: [
@@ -35,7 +36,7 @@ Client.on("messageCreate", async msg => {
 
     // Base commands
     if(["help", "info"].includes(command)) await SendHelpMessage(msg);
-    if(["upgrade", "premium"].includes(command)) await SendPremiumMessage(msg);
+    if(["upgrade", "premium"].includes(command)) await SendPremiumMessage(msg, options);
 
     // Premium customizable commands
     const Channel = await GetChannel(msg.channelId);
@@ -53,6 +54,9 @@ Client.on("messageCreate", async msg => {
     if(Channel.channel.commands["reset"] == command) await Reset(msg);
     if(Channel.channel.commands["settings"] == command) await SendSettings(msg);
     if(Channel.channel.commands["admin"] == command) await Administrators(msg, options); 
+
+    if(!Channel.channel.premium) return;
+    if(command == "stats" || command == "statistics") await Stats(msg);
 });
 
 export function login() {

@@ -10,8 +10,8 @@ import { SubredditScore, SubredditConnections } from './subreddits';
  * @param subreddit Subreddit name
  * @returns Post or error message
  */
-export async function ScrapeFromSubreddit(id: string, subreddit: string): Promise<Post | string> {
-    const Channel = await GetChannel(id);
+export async function ScrapeFromSubreddit(server_id: string, channel_id: string, subreddit: string): Promise<Post | string> {
+    const Channel = await GetChannel(server_id, channel_id);
     const sub = Channel.subreddits[subreddit];
 
     // Check for cached posts
@@ -37,7 +37,7 @@ export async function ScrapeFromSubreddit(id: string, subreddit: string): Promis
         if(reddit_response.error) return reddit_response.error;
         posts = reddit_response.posts.filter(a =>
             a.time > (sub ? sub.previous_post_utc : 0)
-            || Date.now()/1000-a.time < 7200
+            || Date.now()/1000-a.time < 3600
             || Date.now()/1000-a.time > 86400
         );
         after = reddit_response.after;
@@ -54,8 +54,8 @@ export async function ScrapeFromSubreddit(id: string, subreddit: string): Promis
  * @param id Discord channel ID
  * @returns Post or error message
  */
-export async function ScrapeFromFeed(id: string): Promise<Post | string> {
-    const Channel = await GetChannel(id);
+export async function ScrapeFromFeed(server_id: string, channel_id: string): Promise<Post | string> {
+    const Channel = await GetChannel(server_id, channel_id);
 
     // Sort all subreddits in preference database
     let subreddit_set: Set<string> = new Set();
@@ -66,11 +66,12 @@ export async function ScrapeFromFeed(id: string): Promise<Post | string> {
     let subreddits = Array.from(subreddit_set);
 
     // Rank subreddits from highest score to lowest score
-    let parsed_subs = subreddits.map(async (sub: string) => ({
+    let parsed_subs = (await Promise.all(subreddits.map(async (sub: string) => ({
         subreddit: sub,
-        score: await SubredditScore(id, sub) + Math.random() / 20
-    }));
-    let ranked_subs = (await Promise.all(parsed_subs)).sort((a, b) => b.score - a.score);
+        time: Channel.subreddits[sub] ? Channel.subreddits[sub].previous_post_utc : 0,
+        score: await SubredditScore(server_id, channel_id, sub) + Math.random() / 20
+    }))));
+    let ranked_subs = parsed_subs.filter(a => Date.now()/1000-a.time > 3600).sort((a, b) => b.score - a.score);
 
     // Gives a weighted ratio for picking top subs
     let amount = Math.min(8, parsed_subs.length);
@@ -81,7 +82,7 @@ export async function ScrapeFromFeed(id: string): Promise<Post | string> {
         let random_float = Math.random() * total;
         let random = ranked_subs.findIndex(a => 0 >= (random_float -= a.score));
 
-        let post = await ScrapeFromSubreddit(id, ranked_subs[random].subreddit);
+        let post = await ScrapeFromSubreddit(server_id, channel_id, ranked_subs[random].subreddit);
 
         if(typeof post == "string") {
             // Removes duplicate scrapes

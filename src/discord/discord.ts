@@ -7,8 +7,7 @@ import { AddSubreddit, RemoveSubreddit, Reset } from './commands/dynamic/prefere
 import { SendPost } from './commands/dynamic/send';
 import { SendSettings } from './commands/dynamic/settings';
 import { Administrators } from './commands/dynamic/permissions';
-import { IsPremium, Stats } from './commands/dynamic/premium';
-import { getHeapStatistics } from 'v8';
+import { ChannelIsPremium, List, Stats } from './commands/dynamic/premium';
 
 const Client = new Discord.Client({
     intents: [
@@ -32,14 +31,14 @@ Client.on("messageCreate", async msg => {
 
     const message = msg.content.slice(2).split(/\s/g).filter(a => a.length != 0);
     const command = message[0].toLowerCase();
-    const options = message.slice(1);
+    const options = message.slice(1).map(x => x.toLowerCase());
 
     // Base commands
     if(["help", "info"].includes(command)) await SendHelpMessage(msg);
     if(["upgrade", "premium"].includes(command)) await SendPremiumMessage(msg, options);
 
     // Premium customizable commands
-    const Channel = await GetChannel(msg.channelId);
+    const Channel = await GetChannel(msg.guildId, msg.channelId);
 
     if(!Channel.channel.administrators.users.includes(msg.author.id)
     && !msg.member.roles.cache.hasAny(...Channel.channel.administrators.roles)
@@ -55,8 +54,9 @@ Client.on("messageCreate", async msg => {
     if(Channel.channel.commands["settings"] == command) await SendSettings(msg);
     if(Channel.channel.commands["admin"] == command) await Administrators(msg, options); 
 
-    if(!Channel.channel.premium) return;
+    if(!await ChannelIsPremium(msg.guildId, msg.channelId)) return;
     if(command == "stats" || command == "statistics") await Stats(msg);
+    if(command == "list" || command == "subreddits") await List(msg, options);
 });
 
 export function login() {

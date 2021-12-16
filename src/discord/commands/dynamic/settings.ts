@@ -1,15 +1,14 @@
 import * as Discord from 'discord.js'
-import { MongoServerClosedError } from 'mongodb';
-import { GetChannel, UpdateChannelPreference } from '../../../database/preference'
+import { GetChannel, UpdateChannel } from '../../../database/preference'
 import { SendPremiumMessage } from '.././static';
 
 const settings = {
     "allow_nsfw": ["Allow NSFW Posts", "yep..", async (response: Discord.Message) => {
-        const Channel = await GetChannel(response.channelId);
+        const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_nsfw = !Channel.channel.allow_nsfw;
     }],
     "allow_video": ["Allow Video Posts", "Video posts do not have sound and take longer to load", async (response: Discord.Message) => {
-        const Channel = await GetChannel(response.channelId);
+        const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_video = !Channel.channel.allow_video;
     }],
     "premium": ["Account Upgraded", "Support us through buying premium", async (response: Discord.Message) => {
@@ -22,7 +21,7 @@ const settings = {
         }).on('collect', () => message.delete());
     }],
     "done": ["Done", "Finalize setting changes", async (response: Discord.Message) => {
-        await UpdateChannelPreference(response.channelId);
+        await UpdateChannel(response.guildId, response.channelId);
         await response.delete();
     }]
 };
@@ -32,7 +31,7 @@ const settings = {
  * @param msg Discord message object
  */
 export async function SendSettings(msg: Discord.Message) {
-    const Channel = await GetChannel(msg.channelId);
+    const Channel = await GetChannel(msg.guildId, msg.channelId);
 
     const make_embed = async (index: number) => {
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });

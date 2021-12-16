@@ -12,7 +12,6 @@ const TrustedDomains = ['v.redd.it', 'i.redd.it', 'i.imgur.com', 'tenor.com'];
  * Get list of posts, as well as final post in feed to iterate searches
  * @param subreddit Subreddit name to search
  * @param after Post in feed to start search at
- * @param search_videos Search for videos
  * @returns [List of valid posts, Final post in feed]
  */
 export async function GetPosts(preference: ChannelPreference, subreddit: string, after: string): Promise<{ posts: Post[], after: string, error: string }> {

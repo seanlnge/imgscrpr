@@ -1,5 +1,5 @@
 import * as Discord from 'discord.js'
-import { GetChannel, UpdateSubredditData, ResetChannel } from '../../../database/preference';
+import { GetChannel, UpdateChannel, ResetChannel } from '../../../database/preference';
 
 /**
  * Add subreddit to top of channel preference
@@ -12,7 +12,7 @@ export async function AddSubreddit(msg: Discord.Message, options: string[]) {
         return;
     }
 
-    const Channel = await GetChannel(msg.channelId);
+    const Channel = await GetChannel(msg.guildId, msg.channelId);
     const subreddit = options[0].replace(/(r\/|\/)/g, "");
 
     // Get top subreddit in preference
@@ -24,7 +24,7 @@ export async function AddSubreddit(msg: Discord.Message, options: string[]) {
     Channel.AddSubreddit(subreddit, top.score + 3, top.total);
 
     // Update in database and finalize
-    await UpdateSubredditData(msg.channelId, subreddit);
+    await UpdateChannel(msg.guildId, msg.channelId);
     await msg.channel.send(`**r/${subreddit}** has been added to the personalized feed`);
 }
 
@@ -39,13 +39,13 @@ export async function RemoveSubreddit(msg: Discord.Message, options: string[]) {
         return;
     }
 
-    const Channel = await GetChannel(msg.channelId);
+    const Channel = await GetChannel(msg.guildId, msg.channelId);
     const subreddit = options[0].replace(/(r\/|\/)/g, "");
 
     delete Channel.subreddits[subreddit];
 
     // Update in database and finalize
-    await UpdateSubredditData(msg.channelId, subreddit);
+    await UpdateChannel(msg.guildId, msg.channelId);
     await msg.channel.send(`__r/${subreddit}__ will no longer show up in the feed`);
 }
 
@@ -54,6 +54,6 @@ export async function RemoveSubreddit(msg: Discord.Message, options: string[]) {
  * @param msg Discord message object
  */
 export async function Reset(msg: Discord.Message) {
-    await ResetChannel(msg.channelId);
+    await ResetChannel(msg.guildId, msg.channelId);
     await msg.channel.send("Channel reset");
 }

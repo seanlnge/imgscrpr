@@ -1,8 +1,9 @@
 import * as Discord from 'discord.js'
-import { GetChannel, UpdateSubredditData } from '../../../database/preference';
+import { GetChannel, UpdateChannel } from '../../../database/preference';
 import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../../scraper/scraper';
 import Post from '../../../post';
 import { UpdateConnections } from '../../../scraper/subreddits';
+import { ChannelIsPremium } from './premium';
 
 /**
  * Send personalized post with option for specific subreddit
@@ -11,21 +12,29 @@ import { UpdateConnections } from '../../../scraper/subreddits';
  * @returns 
  */
 export async function SendPost(msg: Discord.Message, options: string[]) {
-    const Channel = await GetChannel(msg.channelId);
-    const WaitTimeMs = Channel.channel.premium ? 5000 : 300000;
+    const Channel = await GetChannel(msg.guildId, msg.channelId);
+    const Premium = await ChannelIsPremium(msg.guildId, msg.channelId);
 
-    if(Date.now() - Channel.channel.last_accessed < WaitTimeMs) {
-        let time_left = WaitTimeMs - (Date.now() - Channel.channel.last_accessed);
+    if(!Premium && Date.now() - Channel.channel.last_accessed < 60000) {
+        let time_left = 60000 - (Date.now() - Channel.channel.last_accessed);
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
         embed.description = `Thanks for recognition, but API calls are expensive\n\n`
                           + `Please wait **${Math.ceil(time_left/1000)} seconds** or upgrade to our premium version`;
         await msg.channel.send({ embeds: [embed] });
         return;
     }
+    
+    if(Premium && Date.now() - Channel.channel.last_accessed < 3000) {
+        let time_left = 3000 - (Date.now() - Channel.channel.last_accessed);
+        const embed = new Discord.MessageEmbed({ color: "#d62e00" });
+        embed.description =`Please wait **${Math.ceil(time_left/1000)} seconds**`;
+        await msg.channel.send({ embeds: [embed] });
+        return;
+    }
 
     const Post: (Post | string) = await (async () => {
-        if(options[0]) return await ScrapeFromSubreddit(msg.channelId, options[0].replace(/(r\/|\/)/g, ""));
-        return await ScrapeFromFeed(msg.channelId);
+        if(options[0]) return await ScrapeFromSubreddit(msg.guildId, msg.channelId, options[0].replace(/(r\/|\/)/g, ""));
+        return await ScrapeFromFeed(msg.guildId, msg.channelId);
     })();
 
     if(typeof Post == "string") {
@@ -59,7 +68,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
 
     // Save previous subreddit data
     let last_subreddit = Channel.LastAccessed();
-    if(last_subreddit) await UpdateSubredditData(msg.channelId, last_subreddit);
+    if(last_subreddit) await UpdateChannel(msg.guildId, msg.channelId);
 
     // Get/create subreddit data in channel preference
     if(!(Post.subreddit in Channel.subreddits)) {
@@ -106,7 +115,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
 
     // At end of 20 minutes update database
     Collector.on("end", async () => {
-        await UpdateSubredditData(msg.channelId, Post.subreddit);
-        await UpdateConnections(msg.channelId, Post.subreddit, Subreddit.score - initial_score, Subreddit.total - initial_total);
+        await UpdateChannel(msg.guildId, msg.channelId);
+        await UpdateConnections(msg.guildId, msg.channelId, Post.subreddit, Subreddit.score - initial_score, Subreddit.total - initial_total);
     });
 }

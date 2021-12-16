@@ -9,7 +9,7 @@ async function add(msg: Discord.Message, options: string[]) {
 
     const is_role = options[0][2] == '&'; // <@&1234> pings a role, <@!1234> pings a user
     const data = options[0].slice(3, -1); // Takes the 1234 from <@!1234>
-    const Channel = await GetChannel(msg.channelId);
+    const Channel = await GetChannel(msg.guildId, msg.channelId);
 
     // Roles
     if(is_role) {
@@ -38,7 +38,7 @@ async function remove(msg: Discord.Message, options: string[]) {
 
     const is_role = options[0][2] == '&';
     const data = options[0].slice(3, -1);
-    const Channel = await GetChannel(msg.channelId);
+    const Channel = await GetChannel(msg.guildId, msg.channelId);
 
     // Roles
     if(is_role) {

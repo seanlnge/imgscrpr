@@ -6,16 +6,9 @@ const uri = `mongodb+srv://seanLange:${process.env.MONGO_PASS}@cluster0.ux4by.mo
 export const Client = new MongoClient(uri, {});
 
 class Preference {
-    subreddits: { [key: string]: SubredditData };
-    channel: ChannelPreference;
-    statistics: Statistics;
     initialize: () => Preference;
 
-    constructor(subreddits: { [key: string]: SubredditData }, channel: ChannelPreference, statistics: Statistics) {
-        this.subreddits = subreddits;
-        this.channel = channel;
-        this.statistics = statistics;
-    }
+    constructor(public subreddits: { [key: string]: SubredditData }, public channel: ChannelPreference, public statistics: Statistics) {}
     
     AddSubreddit(
         subreddit: string,
@@ -116,57 +109,27 @@ export type SubredditData = {
 
 export const WorkingPreferences: { [key: string]: Preference } = {};
 
-function channel(id: string) {
-    return Client.db("channels").collection(id);
+function server(id: string) {
+    return Client.db("servers").collection(id);
 }
 
-async function initialize_channel(id: string) {
+async function initialize_channel(server_id: string, channel_id: string) {
     // Create new preference
-    WorkingPreferences[id] = Preference.prototype.initialize();
-
-    // Parse subreddits to insert into db
-    const parsed_subreddits = [];
-    for(const sub_name in WorkingPreferences[id].subreddits) {
-        const sub = WorkingPreferences[id].subreddits[sub_name];
-        parsed_subreddits.push({ subreddit: sub_name, ...sub })
-    }
-
-    // Push channel preference
-    parsed_subreddits.push({ preference: true, ...WorkingPreferences[id].channel });
-    
-    // Push channel statistics
-    parsed_subreddits.push({ statistics: true, ...WorkingPreferences[id].statistics })
-    
-    await channel(id).insertMany(parsed_subreddits);
+    WorkingPreferences[channel_id] = Preference.prototype.initialize();
+    await UpdateChannel(server_id, channel_id);
 }
 
-export async function GetChannel(id: string): Promise<Preference> {
-    if(id in WorkingPreferences) return WorkingPreferences[id];
+export async function GetChannel(server_id: string, channel_id: string): Promise<Preference> {
+    if(channel_id in WorkingPreferences) return WorkingPreferences[channel_id];
 
     // Find channel preference in db
-    const channelPref = await channel(id).findOne({ preference: { $exists: true } });
-    if(channelPref) {
-        delete channelPref.preference;
-
-        // Parse subreddits to insert into db
-        const subreddits = {};
-        for(let sub of await channel(id).find({ subreddit: { $exists: true } }).toArray()) {
-            const subreddit = sub.subreddit;
-            delete sub.subreddit;
-            subreddits[subreddit] = sub;
-        }
-
-        // Get statistics
-        const statistics = await channel(id).findOne({ statistics: { $exists: true } });
-        delete statistics.statistics;
-
-        const preference = new Preference(subreddits, channelPref as ChannelPreference, statistics as Statistics);
-        WorkingPreferences[id] = preference;
-        return preference;
+    const channel = await server(server_id).findOne({ channel_id: { $eq: channel_id } });
+    if(channel) {
+        return WorkingPreferences[channel_id] = new Preference(channel.subreddits, channel.preference, channel.statistics);
     }
     
-    await initialize_channel(id);
-    return WorkingPreferences[id];
+    await initialize_channel(server_id, channel_id);
+    return WorkingPreferences[channel_id];
 }
 
 /**
@@ -174,42 +137,26 @@ export async function GetChannel(id: string): Promise<Preference> {
  * @param id Discord channel ID
  * @param subreddit Subreddit name
  */
-export async function UpdateSubredditData(id: string, subreddit: string) {
-    await channel(id).updateOne(
-        { subreddit: { $eq: subreddit } },
-        { $set: WorkingPreferences[id].subreddits[subreddit] },
-        { upsert: true }
-    );
-
-    const data = { statistics: true, ...WorkingPreferences[id].statistics };
-    await channel(id).updateOne(
-        { statistics: { $exists: true } },
-        { $set: data }
-    );
-}
-
-/**
- * Update channel preference in database
- * @param id Discord channel ID
- */
-export async function UpdateChannelPreference(id: string) {
-    await channel(id).updateOne(
-        { preference: { $exists: true } },
-        { $set: WorkingPreferences[id].channel },
-        { upsert: true }
-    );
+export async function UpdateChannel(server_id: string, channel_id: string) {
+    await server(server_id).updateOne({ channel_id: { $eq: channel_id }}, { $set: {
+        channel_id,
+        subreddits: WorkingPreferences[channel_id].subreddits,
+        preference: WorkingPreferences[channel_id].channel,
+        statistics: WorkingPreferences[channel_id].statistics 
+    }}, { upsert: true });
 }
 
 /**
  * Reset all preferences and data in channel
  * @param id Discord channel ID
  */
-export async function ResetChannel(id: string) {
-    await channel(id).deleteMany({ subreddit: { $exists: true } });
-    await channel(id).deleteOne({ statistics: { $exists: true } });
-    let channel_preference = WorkingPreferences[id].channel;
-    await initialize_channel(id);
-    WorkingPreferences[id].channel = channel_preference;
+export async function ResetChannel(server_id: string, channel_id: string) {
+    // Keep channel preferences
+    let channel_preference = WorkingPreferences[channel_id].channel;
+    await initialize_channel(server_id, channel_id);
+    WorkingPreferences[channel_id].channel = channel_preference;
+    
+    await UpdateChannel(server_id, channel_id);
 }
 
 export async function connect_db() { await Client.connect() };

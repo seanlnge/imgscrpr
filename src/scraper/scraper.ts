@@ -66,11 +66,15 @@ export async function ScrapeFromFeed(server_id: string, channel_id: string): Pro
     let subreddits = Array.from(subreddit_set);
 
     // Rank subreddits from highest score to lowest score
-    let parsed_subs = (await Promise.all(subreddits.map(async (sub: string) => ({
-        subreddit: sub,
-        time: Channel.subreddits[sub] ? Channel.subreddits[sub].previous_post_utc : 0,
-        score: await SubredditScore(server_id, channel_id, sub) + Math.random() / 20
-    }))));
+    let parsed_subs = await Promise.all(
+        subreddits.map(async (sub: string) => {
+            return {
+                subreddit: sub,
+                time: Channel.subreddits[sub] ? Channel.subreddits[sub].previous_post_utc : 0,
+                score: await SubredditScore(server_id, channel_id, sub) + Math.random() / 20
+            }
+        })
+    );
     let ranked_subs = parsed_subs.filter(a => Date.now()/1000-a.time > 3600).sort((a, b) => b.score - a.score);
 
     // Gives a weighted ratio for picking top subs

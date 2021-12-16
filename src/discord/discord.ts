@@ -62,3 +62,33 @@ Client.on("messageCreate", async msg => {
 export function login() {
     Client.login(process.env.TOKEN);
 }
+
+// For adding members to premium if Patreon bot gives them role
+const PremiumRoles = {
+    "918282525544157195": [{ type: "server", id: undefined }],
+    "918282364466135041": Array(4).fill({ type: "channel", id: undefined }),
+    "918282071275876353": { type: "channel", id: undefined }
+}
+Client.on("guildMemberUpdate", (prev: Discord.GuildMember, curr: Discord.GuildMember) => {
+    if(prev.guild.id != "913829500255608853") return; // Support server id
+    if(prev.roles.cache.reduce((a,c) => a+c.id, "") != curr.roles.cache.reduce((a,c) => a+c.id, "")) return;
+
+    const difference = curr.roles.cache.size - prev.roles.cache.size;
+    if(difference == 1) {
+        const roleId = curr.roles.cache.difference(prev.roles.cache).keys()[0];
+        console.log(roleId)
+        if(!(roleId in PremiumRoles)) return;
+    }
+    if(difference == -1) {
+        const roleId = curr.roles.cache.difference(prev.roles.cache).keys()[0];
+        console.log(roleId)
+        if(!(roleId in PremiumRoles)) return;
+
+    }
+    if(difference == 0) {
+        const roleId = curr.roles.cache.difference(prev.roles.cache).keys()[0];
+        console.log(roleId)
+        if(!(roleId in PremiumRoles)) return;
+    }
+
+});

@@ -7,11 +7,12 @@ import { AddSubreddit, RemoveSubreddit, Reset } from './commands/dynamic/prefere
 import { SendPost } from './commands/dynamic/send';
 import { SendSettings } from './commands/dynamic/settings';
 import { Administrators } from './commands/dynamic/permissions';
-import { ChannelIsPremium, List, Stats } from './commands/dynamic/premium';
+import { ChannelIsPremium, List, Stats, UpdateUser } from './commands/dynamic/premium';
 
 const Client = new Discord.Client({
     intents: [
         Discord.Intents.FLAGS.GUILDS,
+        Discord.Intents.FLAGS.GUILD_MEMBERS,
         Discord.Intents.FLAGS.GUILD_MESSAGES,
         Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS
     ]
@@ -59,36 +60,32 @@ Client.on("messageCreate", async msg => {
     if(command == "list" || command == "subreddits") await List(msg, options);
 });
 
-export function login() {
-    Client.login(process.env.TOKEN);
-}
-
 // For adding members to premium if Patreon bot gives them role
 const PremiumRoles = {
     "918282525544157195": [{ type: "server", id: undefined }],
     "918282364466135041": Array(4).fill({ type: "channel", id: undefined }),
-    "918282071275876353": { type: "channel", id: undefined }
+    "918282071275876353": [{ type: "channel", id: undefined }]
 }
-Client.on("guildMemberUpdate", (prev: Discord.GuildMember, curr: Discord.GuildMember) => {
+Client.on("guildMemberUpdate", async (prev: Discord.GuildMember, curr: Discord.GuildMember) => {
     if(prev.guild.id != "913829500255608853") return; // Support server id
-    if(prev.roles.cache.reduce((a,c) => a+c.id, "") != curr.roles.cache.reduce((a,c) => a+c.id, "")) return;
+    if(prev.roles.cache.reduce((a,c) => a+c.id, "") == curr.roles.cache.reduce((a,c) => a+c.id, "")) return;
+    
+    const roleId = curr.roles.cache.difference(prev.roles.cache).keys().next().value;
+    if(!(roleId in PremiumRoles)) return;
 
     const difference = curr.roles.cache.size - prev.roles.cache.size;
-    if(difference == 1) {
-        const roleId = curr.roles.cache.difference(prev.roles.cache).keys()[0];
-        console.log(roleId)
-        if(!(roleId in PremiumRoles)) return;
-    }
-    if(difference == -1) {
-        const roleId = curr.roles.cache.difference(prev.roles.cache).keys()[0];
-        console.log(roleId)
-        if(!(roleId in PremiumRoles)) return;
-
-    }
-    if(difference == 0) {
-        const roleId = curr.roles.cache.difference(prev.roles.cache).keys()[0];
-        console.log(roleId)
-        if(!(roleId in PremiumRoles)) return;
+    if(difference > 0) {
+        await UpdateUser(curr.id, PremiumRoles[roleId]);
+    } else if(difference < 0) {
+        await UpdateUser(curr.id, []);
     }
 
+    return;
 });
+
+export async function login() {
+    await Client.login(process.env.TOKEN);
+
+    // Fetch members from premium support guild
+    await (await Client.guilds.fetch("913829500255608853")).members.fetch();
+}

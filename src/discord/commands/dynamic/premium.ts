@@ -219,3 +219,72 @@ export async function List(msg: Discord.Message, options: string[]) {
     }
     return await msg.reply({ embeds: [embed] });
 }
+
+export async function Reactions(msg: Discord.Message, options: string[]) {
+    const Channel = await GetChannel(msg.guildId, msg.channelId);
+    const reactions = Channel.channel.reactions;
+
+    const make_embed = async (index: number) => {
+        const embed = new Discord.MessageEmbed({ color: "#d62e00" });
+        const channel_name = msg.guild.channels.cache.get(msg.channelId).name;
+        embed.setTitle("Message Reactions for #" + channel_name);
+        embed.setDescription("Each reaction has a score attached which provides feedback to Imgscrpr, ultimately providing a better experience with future posts. ");
+
+        for(const reaction in reactions) {
+            let name = (Object.keys(reactions)[index] == reaction ? ':arrow_right: ' : ':black_large_square: ') + '⠀' + reaction;
+            let value = reactions[reaction];
+            embed.addField(`${name}  ${value > 0 ? '+' + value : value}`, '⠀');
+        }
+        let emoji = index == Object.keys(reactions).length ? ':arrow_right: ' : ':black_large_square: ';
+        embed.addField(emoji + '⠀Done', '⠀');
+        return embed;
+    }
+
+    let index = 0;
+    const response = await msg.channel.send({ embeds: [await make_embed(index)] });
+    await response.react("🔺");
+    await response.react("🔻");
+    await response.react("↔️");
+    // Collect reactions
+    const Collector = response.createReactionCollector({
+        filter: (reaction, user) => !user.bot && ['🔺', '🔻', '↔️'].includes(reaction.emoji.name),
+        time: 120000,
+        dispose: true,
+    });
+
+    // On reaction add
+    Collector.on('collect', async (reaction, user) => {
+        // Move to different commands
+        if(['🔺', '🔻'].includes(reaction.emoji.name)) {
+            if(reaction.emoji.name == '🔺') {
+                // Make sure index is positive
+                index = (index + Object.keys(reactions).length - 1) % (Object.keys(reactions).length+1);
+            } else {
+                index = (index + 1) % (Object.keys(reactions).length+1);
+            }
+            await response.edit({ embeds: [await make_embed(index)] });
+            await response.reactions.resolve(reaction.emoji.name).users.remove(user.id);
+            return;
+        }
+
+        // User must be admin to allow for changes
+        if(
+            Channel.channel.administrators.users.includes(msg.author.id)
+            || msg.member.roles.cache.hasAny(...Channel.channel.administrators.roles)
+            || msg.member.permissions.has("ADMINISTRATOR")
+        ) {
+            await response.edit({ embeds: [await make_embed(index)] }).catch(() => /* ok? dont care? */{});
+        }
+
+        // Remove reaction to allow for repeated reactions
+        await response.reactions.resolve(reaction.emoji.name).users.remove(user.id).catch(() => /* ok? dont care? */{});
+    });
+
+    // At end of 2 minutes update database
+    Collector.on('end', async () => {
+        await response.delete().catch(() => /* ok? dont care? */{});
+        await msg.delete().catch(() => /* ok? dont care? */{});
+    });
+    const embed = new Discord.MessageEmbed({ color: "#d62e00" });
+    
+}

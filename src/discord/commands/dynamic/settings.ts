@@ -35,7 +35,8 @@ export async function SendSettings(msg: Discord.Message) {
 
     const make_embed = async (index: number) => {
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
-        embed.setTitle("Imgscrpr Settings");
+        const channel_name = msg.guild.channels.cache.get(msg.channelId).name;
+        embed.setTitle("Imgscrpr Settings for #" + channel_name);
 
         for(const setting in settings) {
             let name = settings[setting][0];

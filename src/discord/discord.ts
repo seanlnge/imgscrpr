@@ -7,7 +7,7 @@ import { AddSubreddit, RemoveSubreddit, Reset } from './commands/dynamic/prefere
 import { SendPost } from './commands/dynamic/send';
 import { SendSettings } from './commands/dynamic/settings';
 import { Administrators } from './commands/dynamic/permissions';
-import { ChannelIsPremium, List, Stats, UpdateUser } from './commands/dynamic/premium';
+import { ChannelIsPremium, List, Reactions, Stats, UpdateUser } from './commands/dynamic/premium';
 
 const Client = new Discord.Client({
     intents: [
@@ -58,6 +58,7 @@ Client.on("messageCreate", async msg => {
     if(!await ChannelIsPremium(msg.guildId, msg.channelId)) return;
     if(command == "stats" || command == "statistics") await Stats(msg);
     if(command == "list" || command == "subreddits") await List(msg, options);
+    if(command == "reactions") await Reactions(msg, options);
 });
 
 // For adding members to premium if Patreon bot gives them role

@@ -12,7 +12,7 @@ const HelpMessage = [
     { command: "`i.admin`", description: "Give/revoke administrator access to user/role\n⠀" },
     { premium: true, command: "`i.stats`", description: "Show statistics on the current channel\n⠀" },
     { premium: true, command: "`i.list {amount}?`", description: "List the top subreddits in your preferences as well as scores for each\n⠀" },
-    { premium: true, command: "`i.reactions [add {reaction} {score}]?`", description: "List the post scoring reactions, and add or delete them"}
+    { premium: true, command: "`i.reactions [add {reaction} {score}]?`", description: "List the post scoring reactions, and add or delete themd"}
 ];
 
 

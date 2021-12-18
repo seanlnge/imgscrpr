@@ -38,12 +38,15 @@ export async function UpdateUser(user_id: string, data: { [key: string]: string 
 }
 
 export async function Add(msg: Discord.Message, options: string[]) {
-    if(options.length > 1) return await msg.reply(`These other arguments don't do anything: ${options.slice(1).join(', ')}`);
+    if(options.length > 3) return await msg.reply(`These other arguments don't do anything: ${options.slice(1).join(', ')}`);
     if(options.length == 0) return await msg.reply("You forgot to add a channel ID! The correct syntax is `i.premium add channel|server`");
 
     const User = await GetUser(msg);
 
     if(options[0] == "server") {
+        const id = options[1] || msg.guildId;
+        if(options.length > 2) return await msg.reply(`This argument doesn't do anything: ` + options[2]);
+
         if(!User.subscriptions.some(a => !a.guild_id && a.type == "server")) {
             return await msg.reply("You have used all of your premium server slots! Either remove a server or upgrade your subscription tier");
         }
@@ -51,7 +54,7 @@ export async function Add(msg: Discord.Message, options: string[]) {
         if((await Client.db("servers").collection(msg.guildId).findOne({ premium: { $eq: true } }))) {
             return await msg.reply("This server is already premium");
         }
-        User.subscriptions.find(a => a.type == "server" && !a.guild_id).guild_id = msg.guildId;
+        User.subscriptions.find(a => a.type == "server" && !a.guild_id).guild_id = id;
 
         await Client.db("premium").collection(msg.author.id).updateOne({}, { $set: User });
         await Client.db("servers").collection(msg.guildId).updateOne(
@@ -60,26 +63,28 @@ export async function Add(msg: Discord.Message, options: string[]) {
             { upsert: true }
         );
 
-        return await msg.reply("Successfully added this server to premium");
+        return await msg.reply("Successfully added server to premium");
     } else {
+        const guild_id = options[1] || msg.guildId;
+        const channel_id = options[2] || msg.channelId;
+
         if(!User.subscriptions.some(a => !a.channel_id && a.type == "channel")) {
             return await msg.reply("You have used all of your premium channel slots! Either remove a channel or upgrade your subscription tier");
         }
 
-        const Channel = await GetChannel(msg.guildId, msg.channelId);
+        const Channel = await GetChannel(guild_id, channel_id);
         if(Channel.channel.premium) {
             return await msg.reply("That channel is already premium");
         }
         let data = User.subscriptions.find(a => a.type == "channel" && !a.channel_id);
-        data.guild_id = msg.guildId;
-        data.channel_id = msg.channelId;
+        data.guild_id = guild_id;
+        data.channel_id = channel_id;
         await Client.db("premium").collection(msg.author.id).updateOne({}, { $set: User });
 
         Channel.channel.premium = true;
-        await UpdateChannel(msg.guildId, msg.channelId);
+        await UpdateChannel(guild_id, channel_id);
+        return await msg.reply(`Successfully added <#${channel_id}> to premium`);
     }
-
-    return await msg.reply(`Successfully added <#${msg.channelId}> to premium`);
 }
 
 export async function Remove(msg: Discord.Message, options: string[]) {

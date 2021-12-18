@@ -1,16 +1,18 @@
 import * as Discord from 'discord.js';
-import * as Premium from './dynamic/premium';
+import { UserIsPremium, ChannelIsPremium, Help, Display } from './premium/static';
+import { Add, Remove } from './premium/subscription';
 import { GetChannel } from '../../database/preference';
 
 const HelpMessage = [
-    { command: "`i.send {subreddit?}`", description: "Send an image/video\n⠀" },
+    { command: "`i.send {subreddit}?`", description: "Send an image/video\n⠀" },
     { command: "`i.reset`", description: "Reset subreddit statistics and preferences\n⠀" },
     { command: "`i.add {subreddit}`", description: "Add a subreddit to top of feed\n⠀" },
     { command: "`i.remove {subredddit}`", description: "Remove a subreddit from top of feed\n⠀"},
     { command: "`i.settings`", description: "Open up the settings panel\n⠀" },
     { command: "`i.admin`", description: "Give/revoke administrator access to user/role\n⠀" },
     { premium: true, command: "`i.stats`", description: "Show statistics on the current channel\n⠀" },
-    { premium: true, command: "`i.list {amount?}`", description: "List the top subreddits in your preferences as well as scores for each\n⠀" },
+    { premium: true, command: "`i.list {amount}?`", description: "List the top subreddits in your preferences as well as scores for each\n⠀" },
+    { premium: true, command: "`i.reactions [add {reaction} {score}]?`", description: "List the post scoring reactions, and add or delete them"}
 ];
 
 
@@ -18,19 +20,19 @@ export async function SendHelpMessage(msg: Discord.Message) {
     const Channel = await GetChannel(msg.guildId, msg.channelId);
     const embed = new Discord.MessageEmbed({ color: "#d62e00" });
     embed.setTitle("Imgscrpr Help");
-    embed.setDescription("Mobile typing is weird, so Imgscrpr responds to any casing, as well as extra spaces. Curly brackets contain command parameters, question marks mean the argument is optional, and the straight line symbol means either/or.\n")
+    embed.setDescription("Mobile typing is weird, so Imgscrpr responds to any casing, as well as extra spaces. Curly brackets contain command parameters, question marks mean optional, straight brackets are groups, and the straight line symbol means either/or.\n")
     
     embed.addField("\n⠀", "**--- Imgscrpr Commands ---**");
-    const is_premium = await Premium.ChannelIsPremium(msg.guildId, msg.channelId);
+    const is_premium = await ChannelIsPremium(msg.guildId, msg.channelId);
     for(let { command, description, premium } of HelpMessage) {
         if(!is_premium && premium) continue;
         embed.addField(command, description, true);
     }
     // Add premium commands
-    if(!Channel.channel.premium) embed.addField("`i.premium`", "Look at the features that the premium subscription has to offer");
+    if(!await UserIsPremium(msg.author.id)) embed.addField("`i.premium`", "Look at the features that the premium subscription has to offer");
 
     // Premium dashboard for premium users
-    if(await Premium.UserIsPremium(msg.author.id)) {
+    if(await UserIsPremium(msg.author.id)) {
         embed.addField("\n⠀", "**--- Premium Commands ---**");
         embed.addField("`i.premium display`", "Display information about your premium subscription\n⠀");
         embed.addField("`i.premium add channel|server`", "Add Imgscrpr premium to this Discord channel or server\n⠀");
@@ -43,14 +45,14 @@ export async function SendHelpMessage(msg: Discord.Message) {
 
 
 export async function SendPremiumMessage(msg: Discord.Message, options: string[]) {
-    const premium = await Premium.UserIsPremium(msg.author.id);
+    const premium = await UserIsPremium(msg.author.id);
     if(premium) {
         if(options.length) {
             switch(options[0].toLowerCase()) {
-                case 'help': return Premium.Help(msg);
-                case 'display': case 'info': return Premium.Display(msg);
-                case 'add': return Premium.Add(msg, options.slice(1));
-                case 'remove': return Premium.Remove(msg, options.slice(1));
+                case 'help': return Help(msg);
+                case 'display': case 'info': return Display(msg);
+                case 'add': return Add(msg, options.slice(1));
+                case 'remove': return Remove(msg, options.slice(1));
             }
         }
 

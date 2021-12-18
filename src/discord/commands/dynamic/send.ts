@@ -3,7 +3,7 @@ import { GetChannel, UpdateChannel } from '../../../database/preference';
 import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../../scraper/scraper';
 import Post from '../../../post';
 import { UpdateConnections } from '../../../scraper/subreddits';
-import { ChannelIsPremium } from './premium';
+import { ChannelIsPremium } from '../premium/static';
 
 /**
  * Send personalized post with option for specific subreddit

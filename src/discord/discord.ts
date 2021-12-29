@@ -7,11 +7,11 @@ import { AddSubreddit, RemoveSubreddit, Reset } from './commands/dynamic/prefere
 import { SendPost } from './commands/dynamic/send';
 import { SendSettings } from './commands/dynamic/settings';
 import { Administrators } from './commands/dynamic/permissions';
-import { ChannelIsPremium, Stats, List } from './commands/premium/static';
+import { ChannelIsPremium, Stats, Subreddits } from './commands/premium/static';
 import { UpdateUser } from './commands/premium/subscription';
 import { Reactions } from './commands/premium/reactions';
 
-const Client = new Discord.Client({
+export const Client = new Discord.Client({
     intents: [
         Discord.Intents.FLAGS.GUILDS,
         Discord.Intents.FLAGS.GUILD_MEMBERS,
@@ -37,7 +37,7 @@ Client.on("messageCreate", async msg => {
     const options = message.slice(1).map(x => x.toLowerCase());
 
     // Base commands
-    if(["help", "info"].includes(command)) await SendHelpMessage(msg);
+    if(["help", "info"].includes(command)) await SendHelpMessage(msg, options);
     if(["upgrade", "premium"].includes(command)) await SendPremiumMessage(msg, options);
 
     // Premium customizable commands
@@ -59,15 +59,15 @@ Client.on("messageCreate", async msg => {
 
     if(!await ChannelIsPremium(msg.guildId, msg.channelId)) return;
     if(command == "stats" || command == "statistics") await Stats(msg);
-    if(command == "list" || command == "subreddits") await List(msg, options);
+    if(command == "subs" || command == "subreddits") await Subreddits(msg, options);
     if(command == "reactions" || command == "reaction") await Reactions(msg, options);
 });
 
 // For adding members to premium if Patreon bot gives them role
 const PremiumRoles = {
-    "918282525544157195": [{ type: "server", id: undefined }],
-    "918282364466135041": Array(4).fill({ type: "channel", id: undefined }),
-    "918282071275876353": [{ type: "channel", id: undefined }]
+    "918282525544157195": [{ type: "server", guild_id: undefined }],
+    "918282364466135041": Array(4).fill({ type: "channel", guild_id: undefined, channel_id: undefined }),
+    "918282071275876353": [{ type: "channel", guild_id: undefined, channel_id: undefined }]
 }
 Client.on("guildMemberUpdate", async (prev: Discord.GuildMember, curr: Discord.GuildMember) => {
     if(prev.guild.id != "913829500255608853") return; // Support server id
@@ -76,12 +76,7 @@ Client.on("guildMemberUpdate", async (prev: Discord.GuildMember, curr: Discord.G
     const roleId = curr.roles.cache.difference(prev.roles.cache).keys().next().value;
     if(!(roleId in PremiumRoles)) return;
 
-    const difference = curr.roles.cache.size - prev.roles.cache.size;
-    if(difference > 0) {
-        await UpdateUser(curr.id, PremiumRoles[roleId]);
-    } else if(difference < 0) {
-        await UpdateUser(curr.id, []);
-    }
+    await UpdateUser(curr.id, PremiumRoles[Object.keys(PremiumRoles).find(a => curr.roles.cache.get(a))] || []);
 
     return;
 });

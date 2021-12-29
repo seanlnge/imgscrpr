@@ -31,23 +31,37 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
     const ParsedPosts = await Posts.reduce(async (acc_promise: Promise<Post[]>, post: { data: any }) => {
         const PostData = post.data;
         const Acc = await acc_promise;
-        let allowed_video = PostData.is_video ? preference.allow_video : true;
         let allowed_nsfw = PostData.over_18 ? preference.allow_nsfw : true;
         let allowed_domain = TrustedDomains.includes(PostData.domain);
-        if(PostData.stickied || !allowed_video || !allowed_nsfw || !allowed_domain) {
+        if(PostData.stickied || !allowed_nsfw) {
             return Acc;
         }
-        
+
+        let type =
+            PostData.post_hint == 'image' ? 'image':
+            PostData.is_video ? 'video':
+            PostData.is_self ? 'text':
+            undefined;
+
         const PostObject: Post = {
             title: PostData.title,
             subreddit: PostData.subreddit,
-            video: PostData.is_video,
+            type,
             nsfw: PostData.over_18,
             time: PostData.created_utc,
-            url: PostData.url
+            data: undefined
         };
 
-        if(PostData.is_video) {
+        if(type == "image") {
+            if(!allowed_domain) return Acc;
+
+            PostObject.data = PostData.url;
+            if(!AllowedFileTypes.includes(PostObject.data.split(/\./g).slice(-1)[0])) return Acc;
+        }
+
+        else if(type == "video") {
+            if(!preference.allow_video || !allowed_domain) return Acc;
+
             let url = PostData.media.reddit_video.fallback_url;
 
             // Test image qualities to find highest discord sendable
@@ -64,10 +78,15 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
                 if(length <= 8000000) break;
             }
 
-            PostObject.url = url;
+            PostObject.data = url;
         }
+
+        else if(type == "text") {
+            PostObject.data = PostData.selftext;
+        }
+
+        else return Acc;
         
-        if(!AllowedFileTypes.includes(PostObject.url.split(/\./g).slice(-1)[0])) return Acc;
 
         Acc.push(PostObject);
         return Acc;

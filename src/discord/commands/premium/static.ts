@@ -27,21 +27,33 @@ export async function GetUser(msg: Discord.Message): Promise<User> {
 }
 
 const HelpMessage = [
-    { command: "`i.premium display`", description: "Display information about your premium subscription\n⠀" },
-    { command: "`i.premium add channel|server`", description: "Add Imgscrpr premium to this Discord channel or server\n⠀" },
-    { command: "`i.premium remove channel|server`", description: "Remove Imgscrpr premium from this Discord channel or server\n⠀" },
-    { command: "`i.stats`", description: "Show statistics on the current channel\n⠀" },
-    { command: "`i.list {amount}?`", description: "List the top subreddits in your preferences as well as scores for each\n⠀" },
-    { command: "`i.reactions [add {reaction} {score}]?`", description: "List the post scoring reactions and add or delete them"}
+    { name: 'display', command: "i.premium display", description: "Display information about your premium subscription", full: "Display the join date and premium communities that are in your premium subscription" },
+    { name: 'list', command: "i.premium list", description: "View and edit the active communities tied to your premium subscription", full: "Open up the panel to view and edit the active communities tied to your premium subscription" },
+    { name: 'add', command: "i.premium add channel|server {id}?", description: "Add Imgscrpr premium to a Discord channel or server", full: "Set a Discord channel or server to premium, if the id parameter is not provided, it will add the channel or server being typed in" },
+    { name: 'remove', command: "i.premium remove channel|server {id}?", description: "Remove Imgscrpr premium from a Discord channel or server", full: "Remove a Discord channel or server from premium, if the id parameter is not provided, it will add the channel or server being typed in" }
 ];
 
-export async function Help(msg: Discord.Message) {
+export async function Help(msg: Discord.Message, options: string[]) {
     const embed = new Discord.MessageEmbed({ color: "#d62e00" });
-    embed.setTitle("Imgscrpr Premium Commands");
-    embed.setDescription("Thank you so much for buying Imgscrpr premium. It means a lot that you are willing to support us. Join our [support server](https://discord.gg/wx8UfHQr48) if you have any questions whatsoever, and enjoy premium!");
 
-    HelpMessage.forEach(({ command, description }) => embed.addField(command, description));
+    // Detailed help message for particular command
+    if(options.length > 1) {
+        if(options[0] != "help") return await msg.reply(`"${options[0]}" is not a premium command`);
+        let command = HelpMessage.find(a => a.name == options[1]);
+        if(!command) return await msg.reply(`"${options[1]}" is not a premium command`);
+        if(options.length != 2) return await msg.reply(`These arguments do not do anything: ${options.slice(2).join(', ')}`);
 
+        embed.setTitle(command.command);
+        embed.setDescription(command.full);
+    }
+    
+    // Default help message
+    else {
+        embed.setTitle("Imgscrpr Premium Commands");
+        embed.setDescription("Thank you so much for buying Imgscrpr premium. It means a lot that you are willing to support us. Join our [support server](https://discord.gg/wx8UfHQr48) if you have any questions whatsoever, and enjoy premium!");
+        HelpMessage.forEach(({ command, description }) => embed.addField('⠀', `**\`${command}\`** - ${description}`));
+        embed.addField('\n⠀', 'Type `i.help {command}` for a detailed explanation\n[Add Imgscrpr to your Discord server!](https://discord.com/api/oauth2/authorize?client_id=904018497657532447&permissions=532576463936&scope=bot)');
+    }
     await msg.reply({ embeds: [embed] });
 }
 
@@ -52,17 +64,12 @@ export async function Display(msg: Discord.Message) {
     const { subscriptions, unix } = await GetUser(msg);
     if(!subscriptions || !unix) return await msg.reply("Your premium isn't setup yet");
 
-    embed.setDescription(`Member since ${(new Date(unix)).toDateString().slice(4)}\n⠀`);
+    embed.setDescription(`Member since ${(new Date(unix)).toDateString().slice(4)}\n`);
 
-    const active_channels = subscriptions.reduce((a, c) => a + (c.id ? 1 : 0), 0);
-    embed.addField("Number of Subscriptions", subscriptions.length.toString());
-    embed.addField("Active Subscriptions", active_channels.toString());
-    embed.addField("Inactive Subscriptions", (subscriptions.length - active_channels).toString());
+    const active_channels = subscriptions.reduce((a, c) => a + (c.guild_id ? 1 : 0), 0);
+    embed.addField("Unused Premium Slots", (subscriptions.length - active_channels).toString(), true);
+    embed.addField("Active Premium Slots", active_channels.toString(), true);
 
-    // List IDs of channels/servers that have premium
-    embed.addField("Subscription IDs", subscriptions.reduce((a, c) =>
-        `${a}\n${c.type=='channel'?'__Channel__ - '+(c.channel_id||'Inactive'):'__Server__ - '+(c.guild_id||'Inactive')}`
-    , '') + '⠀'); // formatting
     await msg.reply({ embeds: [embed] });
 }
 
@@ -86,7 +93,7 @@ export async function Stats(msg: Discord.Message) {
     return await msg.reply({ embeds: [embed] });
 }
 
-export async function List(msg: Discord.Message, options: string[]) {
+export async function Subreddits(msg: Discord.Message, options: string[]) {
     const amount_str = options[0] || "5";
     if(options.length > 1) return await msg.reply(`These other arguments don't do anything: ${options.slice(1).join(', ')}`);
 

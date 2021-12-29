@@ -52,14 +52,24 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     const embed = new Discord.MessageEmbed();
     embed.setTitle(format_sub).setURL('https://reddit.com' + format_sub);
     embed.setColor("#d62e00");
-    embed.setDescription(Post.title);
 
     // Discord doesn't allow for embed videos
-    if(!Post.video) embed.setImage(Post.url);
-    const Message = await msg.channel.send({
-        embeds: [embed],
-        files: Post.video ? [Post.url] : []
-    });
+    let data: { [key: string]: any } = { embeds: [embed] };
+    if(Post.type == "video") {
+        embed.setDescription(Post.title);
+        data.files = [Post.data]   
+    }
+
+    else if(Post.type == "image") {
+        embed.setDescription(Post.title);
+        embed.setImage(Post.data);
+    }
+
+    else if(Post.type == "text") {
+        embed.addField(Post.title, Post.data || '\u2800');
+    }
+
+    const Message = await msg.channel.send(data);
     
     // Send all reactions
     for(const reaction in Channel.channel.reactions) {

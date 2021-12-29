@@ -3,15 +3,23 @@ import { GetChannel, UpdateChannel } from '../../../database/preference'
 import { SendPremiumMessage } from '.././static';
 
 const settings = {
-    "allow_nsfw": ["Allow NSFW Posts", "yep..", async (response: Discord.Message) => {
+    "allow_nsfw": ["Allow NSFW Posts", "yep..\n\u2800", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_nsfw = !Channel.channel.allow_nsfw;
     }],
-    "allow_video": ["Allow Video Posts", "Video posts do not have sound and take longer to load", async (response: Discord.Message) => {
+    "allow_text": ["Allow Text Posts", "Text posts send only the title and description of a post\n\u2800", async (response: Discord.Message) => {
+        const Channel = await GetChannel(response.guildId, response.channelId);
+        Channel.channel.allow_text = !Channel.channel.allow_text;
+    }],
+    "allow_image": ["Allow Image Posts", "Image posts are the main source of media consumed\n\u2800", async (response: Discord.Message) => {
+        const Channel = await GetChannel(response.guildId, response.channelId);
+        Channel.channel.allow_image = !Channel.channel.allow_image;
+    }],
+    "allow_video": ["Allow Video Posts", "Video posts do not have sound and take longer to load\n\u2800", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_video = !Channel.channel.allow_video;
     }],
-    "premium": ["Account Upgraded", "Support us through buying premium", async (response: Discord.Message) => {
+    "premium": ["Account Upgraded", "Support us through buying premium\n\u2800\n\u2800", async (response: Discord.Message) => {
         const message = await SendPremiumMessage(response, []);
         if(!message) return;
         
@@ -43,6 +51,7 @@ export async function SendSettings(msg: Discord.Message) {
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
         const channel_name = msg.guild.channels.cache.get(msg.channelId).name;
         embed.setTitle("Imgscrpr Settings for #" + channel_name);
+        embed.setDescription("These settings allow you to change what Imgscrpr sends, as well as some other channel-wide preferences\n\u2800");
 
         for(const setting in settings) {
             let name = settings[setting][0];
@@ -71,29 +80,24 @@ export async function SendSettings(msg: Discord.Message) {
 
     // On reaction add
     Collector.on('collect', async (reaction, user) => {
-        // User must be admin to allow for changes
-        const member = msg.guild.members.cache.find(a => a.id == msg.author.id);
-        if(
-            !Channel.channel.administrators.users.includes(user.id)
-            && !member.roles.cache.hasAny(...Channel.channel.administrators.roles)
-            && !member.permissions.has("ADMINISTRATOR")
-        ) return;
+        if(user.id != msg.author.id) return;
 
         // Move to different commands
         if(['🔺', '🔻'].includes(reaction.emoji.name)) {
-            // Make sure index is positive when modulo-ing
-            if(reaction.emoji.name == '🔺') {
-                index = (index + Object.keys(settings).length - 1) % Object.keys(settings).length;
-            }
-            
             // Modulo to wrap around
-            else {
-                index = (index + 1) % Object.keys(settings).length;
-            }
-        } else {
-            await settings[Object.keys(settings)[index]][2](response);
-        }
+            if(reaction.emoji.name == '🔻') index = (index + 1) % Object.keys(settings).length;
+            
+            // Make sure index is positive when modulo-ing
+            else index = (index + Object.keys(settings).length - 1) % Object.keys(settings).length;
 
+            // Remove reaction to allow for repeated reactions
+            await response.edit({ embeds: [await make_embed(index)] }).catch(() => /* ok? dont care? */{});
+            await response.reactions.resolve(reaction.emoji.name).users.remove(user.id).catch(() => /* ok? dont care? */{});
+            return;
+        }
+        
+        await settings[Object.keys(settings)[index]][2](response);
+        
         // Remove reaction to allow for repeated reactions
         await response.edit({ embeds: [await make_embed(index)] }).catch(() => /* ok? dont care? */{});
         await response.reactions.resolve(reaction.emoji.name).users.remove(user.id).catch(() => /* ok? dont care? */{});

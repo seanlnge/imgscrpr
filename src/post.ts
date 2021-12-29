@@ -1,8 +1,8 @@
 export default interface Post {
     title: string,
     subreddit: string,
-    url: string,
-    video: boolean,
     nsfw: boolean,
     time: number,
+    type: string,
+    data: string
 }

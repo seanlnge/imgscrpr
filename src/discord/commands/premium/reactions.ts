@@ -12,7 +12,7 @@ import { GetChannel, UpdateChannel } from "../../../database/preference";
 
     const embed = new Discord.MessageEmbed({ color: "#d62e00" });
     embed.setTitle("Add Scoring Reaction in #" + msg.guild.channels.cache.get(msg.channelId).name);
-    embed.setDescription("Reply to this message embed with your desired reaction");
+    embed.setDescription("React to this message embed with your desired reaction");
     embed.addField("Score", score.toString());
     const response = await msg.reply({ embeds: [embed] });
     
@@ -48,6 +48,14 @@ async function list_reactions(msg: Discord.Message) {
     const Channel = await GetChannel(msg.guildId, msg.channelId);
     const reactions = Channel.channel.reactions;
 
+    // User must be admin to allow for changes
+    const member = msg.guild.members.cache.find(a => a.id == msg.author.id);
+    if(
+        !Channel.channel.administrators.users.includes(msg.author.id)
+        && !member.roles.cache.hasAny(...Channel.channel.administrators.roles)
+        && !member.permissions.has("ADMINISTRATOR")
+    ) return;
+
     // Function called on editing function
     const make_embed = (index: number) => {
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
@@ -69,14 +77,6 @@ async function list_reactions(msg: Discord.Message) {
     let index = 0;
     const response = await msg.channel.send({ embeds: [make_embed(index)] });
 
-    // User must be admin to allow for changes
-    const member = msg.guild.members.cache.find(a => a.id == msg.author.id);
-    if(
-        !Channel.channel.administrators.users.includes(msg.author.id)
-        && !member.roles.cache.hasAny(...Channel.channel.administrators.roles)
-        && !member.permissions.has("ADMINISTRATOR")
-    ) return;
-
     // React with interactive panel
     await response.react("🔺");
     await response.react("🔻");
@@ -91,13 +91,7 @@ async function list_reactions(msg: Discord.Message) {
 
     // On reaction add
     Collector.on('collect', async (reaction, user) => {
-        // User must be admin to allow for changes
-        const member = msg.guild.members.cache.find(a => a.id == msg.author.id);
-        if(
-            !Channel.channel.administrators.users.includes(user.id)
-            && !member.roles.cache.hasAny(...Channel.channel.administrators.roles)
-            && !member.permissions.has("ADMINISTRATOR")
-        ) return;
+        if(user.id != msg.author.id) return;
 
         // Move to different commands
         let keys = Object.keys(reactions);
@@ -108,7 +102,7 @@ async function list_reactions(msg: Discord.Message) {
             } else {
                 index = (index + 1) % (keys.length+1);
             }
-            
+
             // Edit message and delete reaction
             await response.edit({ embeds: [make_embed(index)] });
             await response.reactions.resolve(reaction.emoji.name).users.remove(user.id);

@@ -47,14 +47,6 @@ Preference.prototype.initialize = (subreddits: string[] = [
             allow_video: true,
             voters: true,
             administrators: { users: [], roles: [] },
-            commands: {
-                'send': 'send',
-                'reset': 'reset',
-                'add': 'add',
-                'remove': 'remove',
-                'settings': 'settings',
-                'admin': 'admin'
-            },
             reactions: {
                 '🟢': 1,
                 '🔴': -1
@@ -78,7 +70,6 @@ export type ChannelPreference = {
     allow_image: boolean,
     allow_video: boolean,
     administrators: { users: string[], roles: string[] },
-    commands: { [key: string]: string },
     reactions: { [key: string]: number }
 }
 

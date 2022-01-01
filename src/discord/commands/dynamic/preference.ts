@@ -8,7 +8,7 @@ import { GetChannel, UpdateChannel, ResetChannel } from '../../../database/prefe
  */
 export async function AddSubreddit(msg: Discord.Message, options: string[]) {
     if(options.length == 0) {
-        msg.reply("Subreddit name needs to be included: `i.add subreddit`");
+        await msg.reply("Subreddit name needs to be included: `i.add subreddit`");
         return;
     }
 
@@ -21,7 +21,7 @@ export async function AddSubreddit(msg: Discord.Message, options: string[]) {
         if(!previous) return subreddit;
         return [previous, subreddit].sort((a, b) => b.score - a.score)[0];
     }, undefined);
-    Channel.AddSubreddit(subreddit, top.score + 3, top.total);
+    Channel.AddSubreddit(subreddit, top.score + 3, top.total + 3);
 
     // Update in database and finalize
     await UpdateChannel(msg.guildId, msg.channelId);
@@ -46,7 +46,7 @@ export async function RemoveSubreddit(msg: Discord.Message, options: string[]) {
 
     // Update in database and finalize
     await UpdateChannel(msg.guildId, msg.channelId);
-    await msg.channel.send(`__r/${subreddit}__ will no longer show up in the feed`);
+    await msg.channel.send(`**r/${subreddit}** will no longer show up in the feed`);
 }
 
 /**

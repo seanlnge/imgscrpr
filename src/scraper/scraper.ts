@@ -25,8 +25,8 @@ export async function ScrapeFromSubreddit(server_id: string, channel_id: string,
     // Find new posts given others are old
     while(!posts.length) {
         let reddit_response = await Reddit.GetPosts(Channel.channel, subreddit, after);
-        if(!reddit_response.posts.length) return "No posts from this subreddit right now!";
         if(reddit_response.error) return reddit_response.error;
+        if(!reddit_response.posts.length) return "No posts from this subreddit right now!";
 
         // Verify posts are timely
         posts = reddit_response.posts.filter(a =>

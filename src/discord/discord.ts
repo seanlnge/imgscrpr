@@ -50,12 +50,12 @@ Client.on("messageCreate", async msg => {
         return;
     }
 
-    if(Channel.channel.commands["add"] == command) await AddSubreddit(msg, options);
-    if(Channel.channel.commands["remove"] == command) await RemoveSubreddit(msg, options);
-    if(Channel.channel.commands["send"] == command) await SendPost(msg, options);
-    if(Channel.channel.commands["reset"] == command) await Reset(msg);
-    if(Channel.channel.commands["settings"] == command) await SendSettings(msg);
-    if(Channel.channel.commands["admin"] == command) await Administrators(msg, options); 
+    if(command == "add") await AddSubreddit(msg, options);
+    if(command == "remove") await RemoveSubreddit(msg, options);
+    if(command == "send") await SendPost(msg, options);
+    if(command == "reset") await Reset(msg);
+    if(command == "settings" || command == "options") await SendSettings(msg);
+    if(command == "admin" || command == "admins") await Administrators(msg, options); 
 
     if(!await ChannelIsPremium(msg.guildId, msg.channelId)) return;
     if(command == "stats" || command == "statistics") await Stats(msg);

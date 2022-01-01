@@ -92,7 +92,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     
     // Collect reactions
     const Collector = Message.createReactionCollector({
-        filter: (reaction, user) => !user.bot && reaction.emoji.name in Channel.channel.reactions,
+        filter: (reaction, user) => reaction.emoji.name in Channel.channel.reactions || reaction.emoji.name == "❌",
         time: 1200000,
         dispose: true,
     });
@@ -124,6 +124,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
 
     // At end of 20 minutes update database
     Collector.on("end", async () => {
+        await Message.reactions.removeAll();
         await UpdateChannel(msg.guildId, msg.channelId);
     });
 }

@@ -92,7 +92,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     
     // Collect reactions
     const Collector = Message.createReactionCollector({
-        filter: (reaction, user) => reaction.emoji.name in Channel.channel.reactions || reaction.emoji.name == "❌",
+        filter: reaction => reaction.emoji.name in Channel.channel.reactions || reaction.emoji.name == "❌",
         time: 1200000,
         dispose: true,
     });

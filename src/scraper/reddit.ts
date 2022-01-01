@@ -49,7 +49,9 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
             type,
             nsfw: PostData.over_18,
             time: PostData.created_utc,
-            data: undefined
+            data: undefined,
+            url: 'https://reddit.com' + PostData.permalink,
+            id: PostData.id
         };
 
         if(type == "image") {

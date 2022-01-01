@@ -2,7 +2,6 @@ import * as Discord from 'discord.js'
 import { GetChannel, UpdateChannel } from '../../../database/preference';
 import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../../scraper/scraper';
 import Post from '../../../post';
-import { UpdateConnections } from '../../../scraper/subreddits';
 import { ChannelIsPremium } from '../premium/static';
 
 /**
@@ -31,7 +30,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         await msg.channel.send({ embeds: [embed] });
         return;
     }
-
+    
     const Post: (Post | string) = await (async () => {
         if(options[0]) return await ScrapeFromSubreddit(msg.guildId, msg.channelId, options[0].replace(/(r\/|\/)/g, ""));
         return await ScrapeFromFeed(msg.guildId, msg.channelId);
@@ -48,13 +47,13 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     }
 
     // Create embeded message
-    let format_sub = '/r/' + Post.subreddit;
     const embed = new Discord.MessageEmbed();
-    embed.setTitle(format_sub).setURL('https://reddit.com' + format_sub);
+    embed.setTitle('/r/' + Post.subreddit).setURL(Post.url);
     embed.setColor("#d62e00");
 
-    // Discord doesn't allow for embed videos
     let data: { [key: string]: any } = { embeds: [embed] };
+
+    // Discord doesn't allow for embed videos
     if(Post.type == "video") {
         embed.setDescription(Post.title);
         data.files = [Post.data]   
@@ -65,7 +64,12 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         embed.setImage(Post.data);
     }
 
+    // Make sure less than 1000 chars
     else if(Post.type == "text") {
+        if(Post.data.length > 1000) {
+            const end_length = 16 + Post.url.length;
+            Post.data = `${Post.data.slice(0, 1000 - end_length)} ...\n[Full Post](${Post.url})`;
+        }
         embed.addField(Post.title, Post.data || '\u2800');
     }
 
@@ -75,18 +79,14 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     for(const reaction in Channel.channel.reactions) {
         await Message.react(reaction);
     }
-
-    // Save previous subreddit data
-    let last_subreddit = Channel.LastAccessed();
-    if(last_subreddit) await UpdateChannel(msg.guildId, msg.channelId);
+    await Message.react('❌')
 
     // Get/create subreddit data in channel preference
     if(!(Post.subreddit in Channel.subreddits)) {
-        Channel.AddSubreddit(Post.subreddit, 0, 0, Post.time);
+        Channel.AddSubreddit(Post.subreddit, 0, 0);
     }
     const Subreddit = Channel.subreddits[Post.subreddit];
-    Subreddit.previous_post_utc = Post.time;
-    Subreddit.last_accessed = Date.now();
+    Subreddit.posts[Post.id] = Post.time;
     Channel.channel.last_accessed = Date.now();
     Channel.statistics.posts++;
     
@@ -97,12 +97,11 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         dispose: true,
     });
 
-    // Store for ending
-    let initial_score = Subreddit.score;
-    let initial_total = Subreddit.total;
-
     // On reaction add
     Collector.on('collect', async reaction => {
+        if(reaction.emoji.name == "❌") {
+            return await Message.delete();
+        }
         let score = Channel.channel.reactions[reaction.emoji.name];
         if(!score) return;
 
@@ -126,6 +125,5 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     // At end of 20 minutes update database
     Collector.on("end", async () => {
         await UpdateChannel(msg.guildId, msg.channelId);
-        await UpdateConnections(msg.guildId, msg.channelId, Post.subreddit, Subreddit.score - initial_score, Subreddit.total - initial_total);
     });
 }

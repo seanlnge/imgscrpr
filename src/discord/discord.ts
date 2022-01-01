@@ -70,7 +70,7 @@ const PremiumRoles = {
     "918282071275876353": [{ type: "channel", guild_id: undefined, channel_id: undefined }]
 }
 Client.on("guildMemberUpdate", async (prev: Discord.GuildMember, curr: Discord.GuildMember) => {
-    if(prev.guild.id != "913829500255608853") return; // Support server id
+    if(prev.guild.id != process.env.SUPPORT_SERVER) return; // Support server id
     if(prev.roles.cache.reduce((a,c) => a+c.id, "") == curr.roles.cache.reduce((a,c) => a+c.id, "")) return;
     
     const roleId = curr.roles.cache.difference(prev.roles.cache).keys().next().value;
@@ -85,5 +85,5 @@ export async function login() {
     await Client.login(process.env.TOKEN);
 
     // Fetch members from premium support guild
-    await (await Client.guilds.fetch("913829500255608853")).members.fetch();
+    await (await Client.guilds.fetch(process.env.SUPPORT_SERVER)).members.fetch();
 }

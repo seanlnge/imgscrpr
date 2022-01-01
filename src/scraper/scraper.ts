@@ -15,38 +15,31 @@ export async function ScrapeFromSubreddit(server_id: string, channel_id: string,
     const sub = Channel.subreddits[subreddit];
 
     // Check for cached posts
-    let cached_post = Cache.get_post(subreddit, sub ? sub.previous_post_utc : 0);
+    let cached_post = Cache.Get(subreddit, sub ? sub.posts : {});
     if(cached_post) return cached_post;
 
     // Look through reddit
-    let reddit_response = await Reddit.GetPosts(Channel.channel, subreddit, undefined);
-    if(reddit_response.error) return reddit_response.error;
-
-    // Has to have been posted 2 hours - 24 hours ago to increase quality
-    let posts = reddit_response.posts.filter(a => 
-        a.time > (sub ? sub.previous_post_utc : 0)
-        || Date.now()/1000-a.time < 7200
-        || Date.now()/1000-a.time > 86400
-    );
-    let after = reddit_response.after;
+    let posts = [];
+    let after = undefined;
     
     // Find new posts given others are old
     while(!posts.length) {
         let reddit_response = await Reddit.GetPosts(Channel.channel, subreddit, after);
         if(!reddit_response.posts.length) return "No posts from this subreddit right now!";
         if(reddit_response.error) return reddit_response.error;
+
+        // Verify posts are timely
         posts = reddit_response.posts.filter(a =>
-            a.time > (sub ? sub.previous_post_utc : 0)
-            || Date.now()/1000-a.time < 3600
-            || Date.now()/1000-a.time > 86400
+            !(Date.now()/1000-a.time < 7200)
+            && !(Date.now()/1000-a.time > 86400)
+            && !(sub && (a.id in sub.posts))
         );
         after = reddit_response.after;
     }
 
     // Cache and finalize
-    let post = posts.reduce((a, c) => a.time < c.time ? a : c, posts[0]) as Post;
-    Cache.add_posts(subreddit, posts);
-    return post;
+    Cache.Add(subreddit, posts);
+    return posts[0];
 }
 
 /**
@@ -70,12 +63,11 @@ export async function ScrapeFromFeed(server_id: string, channel_id: string): Pro
         subreddits.map(async (sub: string) => {
             return {
                 subreddit: sub,
-                time: Channel.subreddits[sub] ? Channel.subreddits[sub].previous_post_utc : 0,
                 score: await SubredditScore(server_id, channel_id, sub) + Math.random() / 20
             }
         })
     );
-    let ranked_subs = parsed_subs.filter(a => Date.now()/1000-a.time > 3600).sort((a, b) => b.score - a.score);
+    let ranked_subs = parsed_subs.sort((a, b) => b.score - a.score);
 
     // Gives a weighted ratio for picking top subs
     let amount = Math.min(8, parsed_subs.length);

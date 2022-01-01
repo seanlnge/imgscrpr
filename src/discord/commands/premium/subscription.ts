@@ -3,6 +3,10 @@ import * as Discord from "discord.js";
 import { GetUser } from "./static";
 
 export async function UpdateUser(user_id: string, data: { [key: string]: string }[]) {
+    if(data.length == 0) {
+        await Client.db("premium").dropCollection(user_id);
+    }
+
     const user = await Client.db("premium").collection(user_id).findOne();
     if(user) {
         // Move any previous subscriptions into new data
@@ -38,8 +42,8 @@ export async function UpdateUser(user_id: string, data: { [key: string]: string 
 }
 
 export async function Add(msg: Discord.Message, options: string[]) {
-    if(options.length > 3) return await msg.reply(`These other arguments don't do anything: ${options.slice(1).join(', ')}`);
-    if(options.length == 0) return await msg.reply("You forgot to add a channel ID! The correct syntax is `i.premium add channel|server`");
+    if(options.length > 3) return await msg.reply(`These other arguments don't do anything: ${options.slice(2).join(', ')}`);
+    if(options.length == 0) return await msg.reply("You forgot to add a channel ID! The correct syntax is `i.premium add channel|server {guild_id}? {channel_id}?`");
 
     const User = await GetUser(msg);
 
@@ -88,7 +92,7 @@ export async function Add(msg: Discord.Message, options: string[]) {
         return await msg.reply(`Successfully added <#${channel_id}> to premium`);
     }
     
-    return await msg.reply(`"${options[0]}" is not a valid premium community. Choose from either "channel" or "server"`);
+    else return await msg.reply(`"${options[0]}" is not a valid premium community. Choose from either "channel" or "server"`);
 }
 
 export async function Remove(msg: Discord.Message, options: string[]) {

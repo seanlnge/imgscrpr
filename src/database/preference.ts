@@ -14,34 +14,18 @@ class Preference {
         subreddit: string,
         score: number = 0,
         total: number = 0,
-        previous_post_utc: number = 0,
-        last_accessed: number = 0
+        posts: { [key: string]: number } = {}
     ){
         this.subreddits[subreddit] = {
             score,
             total,
-            previous_post_utc,
-            last_accessed
+            posts
         };
-    }
-
-    /**
-     * Find name of subreddit last accessed by Discord
-     * @returns Name of subreddit last accessed
-     */
-    LastAccessed(): string {
-        const sorted = Object.keys(this.subreddits).sort((a, b) =>
-            this.subreddits[b].last_accessed - this.subreddits[a].last_accessed
-        );
-
-        if(this.subreddits[sorted[0]].last_accessed == 0) return undefined;
-
-        return sorted[0];
     }
 }
 
 Preference.prototype.initialize = (subreddits: string[] = [
-    "thatsinsane", "memes", "gayspiderbrothel"
+    "worldnews", "copypasta", "memes", "gayspiderbrothel", "dankvideos"
 ]): Preference => {
         const parsed_subreddits = {};
 
@@ -49,7 +33,7 @@ Preference.prototype.initialize = (subreddits: string[] = [
             parsed_subreddits[subreddit] = {
                 score: 0,
                 total: 0,
-                previous_post_utc: 0,
+                posts: {},
                 last_accessed: 0
             };
         }
@@ -107,8 +91,7 @@ export type Statistics = {
 export type SubredditData = {
     score: number,
     total: number,
-    previous_post_utc: number,
-    last_accessed: number,
+    posts: { [key: string]: number },
 };
 
 export const WorkingPreferences: { [key: string]: Preference } = {};

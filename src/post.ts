@@ -4,5 +4,7 @@ export default interface Post {
     nsfw: boolean,
     time: number,
     type: string,
-    data: string
+    data: string,
+    url: string,
+    id: string
 }

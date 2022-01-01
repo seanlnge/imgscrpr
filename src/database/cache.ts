@@ -1,22 +1,25 @@
 import Post from '../post';
+import * as NodeCache from "node-cache";
 
-const CachedPosts: { [key: string]: Post[] } = {};
+const Cache = new NodeCache();
 
-export function get_post(subreddit: string, after: number): Post {
-    if(!(subreddit in CachedPosts)) return undefined;
-    return CachedPosts[subreddit].find(post => after < post.time);
+export function Add(subreddit: string, posts: Post[]) {
+    // Move previous posts to front of list
+    if(Cache.has(subreddit)) {
+        let prev: Post[] = Cache.get(subreddit);
+        posts.unshift(...prev);
+    }
+    Cache.set(subreddit, posts);
 }
 
-export function add_posts(subreddit: string, posts: Post[]) {
-    // Create subreddit if non-existent
-    if(!(subreddit in CachedPosts)) {
-        CachedPosts[subreddit] = posts.sort((a, b) => a.time - b.time);
-        return;
-    }
+export function Get(subreddit: string, ids: { [key: string]: number }): Post {
+    if(!Cache.has(subreddit)) return;
 
-    // Verify cached data is not too large
-    let sub = CachedPosts[subreddit];
-    sub.push(...posts);
-    sub = sub.sort((a, b) => a.time - b.time);
-    if(sub.length > 500) sub.splice(0, sub.length - 500);
+    // Remove untimely posts
+    let posts: Post[] = Cache.get(subreddit);
+    posts = posts.filter(a => Date.now() - a.time*1e3 < 86400e3);
+
+    Cache.set(subreddit, posts);
+
+    return posts.find(a => !(a.id in ids));
 }

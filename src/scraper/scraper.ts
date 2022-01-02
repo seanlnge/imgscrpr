@@ -30,8 +30,8 @@ export async function ScrapeFromSubreddit(server_id: string, channel_id: string,
 
         // Verify posts are timely
         posts = reddit_response.posts.filter(a =>
-            !(Date.now()/1000-a.time < 7200)
-            && !(Date.now()/1000-a.time > 86400)
+            !(Date.now()-a.time*1e3 < 7200e3)
+            && !(Date.now()-a.time*1e3 > 86400e3)
             && !(sub && (a.id in sub.posts))
         );
         after = reddit_response.after;
@@ -54,7 +54,7 @@ export async function ScrapeFromFeed(server_id: string, channel_id: string): Pro
     let subreddit_set: Set<string> = new Set();
     for(let sub in Channel.subreddits) {
         subreddit_set.add(sub);
-        (await SubredditConnections(sub)).connections.forEach((a: string) => subreddit_set.add(a));
+        SubredditConnections(sub).forEach((a: string) => subreddit_set.add(a));
     }
     let subreddits = Array.from(subreddit_set);
 

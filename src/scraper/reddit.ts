@@ -17,7 +17,7 @@ const TrustedDomains = ['v.redd.it', 'i.redd.it', 'i.imgur.com', 'tenor.com'];
 export async function GetPosts(preference: ChannelPreference, subreddit: string, after: string): Promise<{ posts: Post[], after: string, error: string }> {
     const URL = `https://reddit.com/r/${subreddit}/hot.json?limit=${preference.allow_video ? '20' : '100'}${after ? '&after='+after : ''}`;
     const RedditResponse = await axios.get(URL).then(res => res.data).catch(err => {
-        switch(err.reason) {
+        switch(err.response.data.reason) {
             case 'private': return 'That subreddit is private!';
             case 'banned': return 'That subreddit has been banned!';
             default: return 'We\'ve had an internal error! Try again';
@@ -45,7 +45,7 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
 
         const PostObject: Post = {
             title: PostData.title,
-            subreddit: PostData.subreddit,
+            subreddit: PostData.subreddit.toLowerCase(),
             type,
             nsfw: PostData.over_18,
             time: PostData.created_utc,

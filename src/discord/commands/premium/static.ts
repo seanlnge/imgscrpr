@@ -1,6 +1,6 @@
 import { Client, GetChannel } from "../../../database/preference";
 import * as Discord from "discord.js";
-import { SubredditScore } from "../../../scraper/subreddits";
+import { SubredditConnections, SubredditScore } from "../../../scraper/subreddits";
 
 export async function ChannelIsPremium(server_id: string, channel_id: string): Promise<boolean> {
     if((await GetChannel(server_id, channel_id)).channel.premium) return true;
@@ -106,7 +106,13 @@ export async function Subreddits(msg: Discord.Message, options: string[]) {
     const amount = parseInt(amount_str);
     if(isNaN(amount)) return await msg.reply(`"${amount_str}" is not a number`);
 
-    const sub_scores = Object.keys(Channel.subreddits).map(async x => {
+    const subreddits: Set<string> = new Set();
+    for(let sub in Channel.subreddits) {
+        subreddits.add(sub);
+        SubredditConnections(sub).forEach(a => subreddits.add(a));
+    }
+    
+    const sub_scores = Array.from(subreddits).map(async x => {
         return { subreddit: x, score: await SubredditScore(msg.guildId, msg.channelId, x) };
     });
     const top_subs = (await Promise.all(sub_scores)).sort((a, b) => b.score - a.score).slice(0, amount);

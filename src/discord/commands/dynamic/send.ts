@@ -53,6 +53,11 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
 
     let data: { [key: string]: any } = { embeds: [embed] };
 
+    // Max title size 256 chars
+    if(Post.title.length > 256) {
+        Post.title = Post.title.slice(0, 252) + ' ...';
+    }
+
     // Discord doesn't allow for embed videos
     if(Post.type == "video") {
         embed.setDescription(Post.title);
@@ -67,8 +72,8 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     // Make sure less than 1000 chars
     else if(Post.type == "text") {
         if(Post.data.length > 1000) {
-            const end_length = 16 + Post.url.length;
-            Post.data = `${Post.data.slice(0, 1000 - end_length)} ...\n[Full Post](${Post.url})`;
+            const end_length = 17 + Post.url.length;
+            Post.data = `${Post.data.slice(0, 1000 - end_length)} ...\n\n[Full Post](${Post.url})`;
         }
         embed.addField(Post.title, Post.data || '\u2800');
     }
@@ -85,6 +90,8 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     if(!(Post.subreddit in Channel.subreddits)) {
         Channel.AddSubreddit(Post.subreddit, 0, 0);
     }
+
+    // Needs to be lowercase; objects are case-sensitive, so are subreddits
     const Subreddit = Channel.subreddits[Post.subreddit];
     Subreddit.posts[Post.id] = Post.time;
     Channel.channel.last_accessed = Date.now();

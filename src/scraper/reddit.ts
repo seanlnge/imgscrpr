@@ -15,7 +15,7 @@ const TrustedDomains = ['v.redd.it', 'i.redd.it', 'i.imgur.com', 'tenor.com'];
  * @returns [List of valid posts, Final post in feed]
  */
 export async function GetPosts(preference: ChannelPreference, subreddit: string, after: string): Promise<{ posts: Post[], after: string, error: string }> {
-    const URL = `https://reddit.com/r/${subreddit}/hot.json?limit=${preference.allow_video ? '20' : '100'}${after ? '&after='+after : ''}`;
+    const URL = `https://reddit.com/r/${subreddit}/hot.json?limit=${preference.allow_video ? '10' : '100'}${after ? '&after='+after : ''}`;
     const RedditResponse = await axios.get(URL).then(res => res.data).catch(err => {
         switch(err.response.data.reason) {
             case 'private': return 'That subreddit is private!';
@@ -55,7 +55,7 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
         };
 
         if(type == "image") {
-            if(!allowed_domain) return Acc;
+            if(!allowed_domain || !preference.allow_image) return Acc;
 
             PostObject.data = PostData.url;
             if(!AllowedFileTypes.includes(PostObject.data.split(/\./g).slice(-1)[0])) return Acc;
@@ -84,6 +84,8 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
         }
 
         else if(type == "text") {
+            if(!preference.allow_text) return Acc;
+
             PostObject.data = PostData.selftext;
         }
 

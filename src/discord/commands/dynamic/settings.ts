@@ -3,30 +3,21 @@ import { GetChannel, UpdateChannel } from '../../../database/preference'
 import { SendPremiumMessage } from '.././static';
 
 const settings = {
-    "allow_nsfw": ["Allow NSFW Posts", "yep..\n\u2800", async (response: Discord.Message) => {
+    "allow_nsfw": ["Allow NSFW Posts", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_nsfw = !Channel.channel.allow_nsfw;
     }],
-    "allow_text": ["Allow Text Posts", "Text posts send only the title and description of a post\n\u2800", async (response: Discord.Message) => {
+    "allow_text": ["Allow Text Posts", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_text = !Channel.channel.allow_text;
     }],
-    "allow_image": ["Allow Image Posts", "Image posts are the main source of media consumed\n\u2800", async (response: Discord.Message) => {
+    "allow_image": ["Allow Image Posts", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_image = !Channel.channel.allow_image;
     }],
-    "allow_video": ["Allow Video Posts", "Video posts do not have sound and take longer to load\n\u2800", async (response: Discord.Message) => {
+    "allow_video": ["Allow Video Posts", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_video = !Channel.channel.allow_video;
-    }],
-    "premium": ["Account Upgraded", "Support us through buying premium\n\u2800\n\u2800", async (response: Discord.Message) => {
-        const message = await SendPremiumMessage(response, []);
-        if(!message) return;
-        
-        await message.react('◀️');
-        message.createReactionCollector({
-            filter: (reaction) => reaction.emoji.name == '◀️'
-        }).on('collect', () => message.delete());
     }],
     "done": ["Done", "Finalize setting changes", async (response: Discord.Message) => {
         await UpdateChannel(response.guildId, response.channelId);
@@ -60,7 +51,7 @@ export async function SendSettings(msg: Discord.Message) {
             let value = Channel.channel[setting] == undefined ? undefined : Channel.channel[setting].toString();
             value = value ? ' - ' + value[0].toUpperCase() + value.slice(1) : '';
 
-            embed.addField(name + value, settings[setting][1]);
+            embed.addField(name + value, '⠀');//settings[setting][1]);
         }
         
         return embed;

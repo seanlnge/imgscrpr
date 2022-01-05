@@ -1,6 +1,14 @@
 import * as Discord from 'discord.js'
 import { GetChannel } from '../../../database/preference';
 
+export async function UserIsAdmin(msg: Discord.Message, user_id) {
+    const Channel = await GetChannel(msg.guildId, msg.channelId);
+    const member = msg.guild.members.cache.find(a => a.id == user_id);
+
+    return Channel.channel.administrators.users.includes(user_id)
+        || member.roles.cache.hasAny(...Channel.channel.administrators.roles)
+        || member.permissions.has("ADMINISTRATOR");
+}
 async function add(msg: Discord.Message, options: string[]) {
     if(!options[0]) options[0] = '';
     if(!['<@!', '<@&'].includes(options[0].slice(0, 3))) {

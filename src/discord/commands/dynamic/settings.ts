@@ -1,6 +1,7 @@
 import * as Discord from 'discord.js'
 import { GetChannel, UpdateChannel } from '../../../database/preference'
 import { SendPremiumMessage } from '.././static';
+import { UserIsAdmin } from './permissions';
 
 const settings = {
     "allow_nsfw": ["Allow NSFW Posts", async (response: Discord.Message) => {
@@ -32,11 +33,7 @@ const settings = {
 export async function SendSettings(msg: Discord.Message) {
     const Channel = await GetChannel(msg.guildId, msg.channelId);
     const member = msg.guild.members.cache.find(a => a.id == msg.author.id);
-    if(
-        !Channel.channel.administrators.users.includes(msg.author.id)
-        && !member.roles.cache.hasAny(...Channel.channel.administrators.roles)
-        && !member.permissions.has("ADMINISTRATOR")
-    ) return await msg.reply("You need to be an administrator to edit settings!");
+    if(!UserIsAdmin(msg, msg.author.id)) return await msg.reply("You need to be an administrator to edit settings!");
 
     const make_embed = async (index: number) => {
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });

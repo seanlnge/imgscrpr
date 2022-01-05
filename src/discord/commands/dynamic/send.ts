@@ -3,6 +3,7 @@ import { GetChannel, UpdateChannel } from '../../../database/preference';
 import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../../scraper/scraper';
 import Post from '../../../post';
 import { ChannelIsPremium } from '../premium/static';
+import { UserIsAdmin } from './permissions';
 
 /**
  * Send personalized post with option for specific subreddit
@@ -105,8 +106,8 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     });
 
     // On reaction add
-    Collector.on('collect', async reaction => {
-        if(reaction.emoji.name == "❌") {
+    Collector.on('collect', async (reaction, user) => {
+        if(reaction.emoji.name == "❌" && await UserIsAdmin(msg, user.id)) {
             return await Message.delete();
         }
         let score = Channel.channel.reactions[reaction.emoji.name];

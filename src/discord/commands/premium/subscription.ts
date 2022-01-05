@@ -4,7 +4,7 @@ import { GetUser } from "./static";
 
 export async function UpdateUser(user_id: string, data: { [key: string]: string }[]) {
     if(data.length == 0) {
-        await Client.db("premium").dropCollection(user_id);
+        return await Client.db("premium").collection(user_id).drop();
     }
 
     const user = await Client.db("premium").collection(user_id).findOne();

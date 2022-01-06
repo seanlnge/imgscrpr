@@ -116,6 +116,7 @@ export async function Remove(msg: Discord.Message, options: string[]) {
 
         return await msg.reply(`Successfully removed this server from premium`);
     } else {
+        if(options.length == 2) return await msg.reply('You need to specify a channel_id! The proper syntax is `i.premium add channel {server_id} {channel_id}`')
         const guild_id = options[1] || msg.guildId;
         const channel_id = options[2] || msg.channelId;
 

@@ -15,8 +15,8 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     const Channel = await GetChannel(msg.guildId, msg.channelId);
     const Premium = await ChannelIsPremium(msg.guildId, msg.channelId);
 
-    if(!Premium && Date.now() - Channel.channel.last_accessed < 60000) {
-        let time_left = 60000 - (Date.now() - Channel.channel.last_accessed);
+    if(!Premium && Date.now() - Channel.channel.last_accessed < 30000) {
+        let time_left = 30000 - (Date.now() - Channel.channel.last_accessed);
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
         embed.description = `Thanks for recognition, but API calls are expensive\n\n`
                           + `Please wait **${Math.ceil(time_left/1000)} seconds** or upgrade to our premium version`;

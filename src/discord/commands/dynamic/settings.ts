@@ -15,11 +15,11 @@ const settings = {
     "allow_image": ["Allow Image Posts", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_image = !Channel.channel.allow_image;
-    }],
+    }],/*
     "allow_video": ["Allow Video Posts", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_video = !Channel.channel.allow_video;
-    }],
+    }],*/
     "done": ["Done", "Finalize setting changes", async (response: Discord.Message) => {
         await UpdateChannel(response.guildId, response.channelId);
         await response.delete();
@@ -59,6 +59,7 @@ export async function SendSettings(msg: Discord.Message) {
     await response.react("🔺");
     await response.react("🔻");
     await response.react("↔️");
+    
     // Collect reactions
     const Collector = response.createReactionCollector({
         filter: (reaction, user) => !user.bot && ['🔺', '🔻', '↔️'].includes(reaction.emoji.name),

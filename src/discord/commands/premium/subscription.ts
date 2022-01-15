@@ -215,6 +215,5 @@ export async function List(msg: Discord.Message) {
     // At end of 2 minutes delete messages
     Collector.on('end', async () => {
         await response.delete().catch(() => /* ok? dont care? */{});
-        await msg.delete().catch(() => /* ok? dont care? */{});
     });
 }

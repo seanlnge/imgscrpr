@@ -20,7 +20,7 @@ const settings = {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_video = !Channel.channel.allow_video;
     }],*/
-    "done": ["Done", "Finalize setting changes", async (response: Discord.Message) => {
+    "done": ["Done", async (response: Discord.Message) => {
         await UpdateChannel(response.guildId, response.channelId);
         await response.delete();
     }]
@@ -32,7 +32,6 @@ const settings = {
  */
 export async function SendSettings(msg: Discord.Message) {
     const Channel = await GetChannel(msg.guildId, msg.channelId);
-    const member = msg.guild.members.cache.find(a => a.id == msg.author.id);
     if(!UserIsAdmin(msg, msg.author.id)) return await msg.reply("You need to be an administrator to edit settings!");
 
     const make_embed = async (index: number) => {
@@ -59,7 +58,7 @@ export async function SendSettings(msg: Discord.Message) {
     await response.react("🔺");
     await response.react("🔻");
     await response.react("↔️");
-    
+
     // Collect reactions
     const Collector = response.createReactionCollector({
         filter: (reaction, user) => !user.bot && ['🔺', '🔻', '↔️'].includes(reaction.emoji.name),
@@ -85,7 +84,7 @@ export async function SendSettings(msg: Discord.Message) {
             return;
         }
         
-        await settings[Object.keys(settings)[index]][2](response);
+        await settings[Object.keys(settings)[index]][1](response);
         
         // Remove reaction to allow for repeated reactions
         await response.edit({ embeds: [await make_embed(index)] }).catch(() => /* ok? dont care? */{});

@@ -44,7 +44,7 @@ Preference.prototype.initialize = (subreddits: string[] = [
             allow_nsfw: false,
             allow_text: true,
             allow_image: true,
-            allow_video: true,
+            allow_video: false,
             voters: true,
             administrators: { users: [], roles: [] },
             reactions: {

@@ -132,7 +132,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
 
     // At end of 20 minutes update database
     Collector.on("end", async () => {
-        await Message.reactions.removeAll();
+        await Message.reactions.removeAll().catch(err => /* ok? */ {});
         await UpdateChannel(msg.guildId, msg.channelId);
     });
 }

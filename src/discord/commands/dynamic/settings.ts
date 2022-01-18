@@ -1,6 +1,5 @@
 import * as Discord from 'discord.js'
 import { GetChannel, UpdateChannel } from '../../../database/preference'
-import { SendPremiumMessage } from '.././static';
 import { UserIsAdmin } from './permissions';
 
 const settings = {

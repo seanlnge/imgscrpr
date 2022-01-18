@@ -1,4 +1,4 @@
-# [imgscrpr](https://discord.com/api/oauth2/authorize?client_id=904018497657532447&permissions=60480&scope=bot)
+# [imgscrpr](https://discord.com/api/oauth2/authorize?client_id=904018497657532447&permissions=27712&scope=bot)
 An adaptive Reddit feed for you Discord server
 ***
 ### Introduction

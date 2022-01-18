@@ -147,7 +147,7 @@ export async function List(msg: Discord.Message) {
         embed.setDescription("View and edit active premium communities linked with your Discord account");
 
         for(const subscription of User.subscriptions.filter(a => !!a.guild_id)) {
-            const emoji = User.subscriptions[index] == subscription ? ':x: ' : ':black_large_square: ';
+            const emoji = User.subscriptions.filter(a => !!a.guild_id)[index] == subscription ? ':x: ' : ':black_large_square: ';
             const name = (subscription.type == "channel" ? `<#${subscription.channel_id}> in ` : '') + `<Server: ${subscription.guild_id}>`;
             embed.addField('\u2800', `${emoji}\u2800**${name}**`);
         }
@@ -161,10 +161,10 @@ export async function List(msg: Discord.Message) {
     const response = await msg.channel.send({ embeds: [await make_embed(index)] });
     await response.react("🔺");
     await response.react("🔻");
-    await response.react("↔️");
+    await response.react("🟠");
     // Collect reactions
     const Collector = response.createReactionCollector({
-        filter: (reaction, user) => !user.bot && ['🔺', '🔻', '↔️'].includes(reaction.emoji.name),
+        filter: (reaction, user) => !user.bot && ['🔺', '🔻', '🟠'].includes(reaction.emoji.name),
         time: 120000,
         dispose: true,
     });

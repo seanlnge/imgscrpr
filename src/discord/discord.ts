@@ -37,8 +37,14 @@ Client.on("messageCreate", async msg => {
     const options = message.slice(1).map(x => x.toLowerCase());
 
     // Base commands
-    if(["help", "info"].includes(command)) await SendHelpMessage(msg, options);
-    if(["upgrade", "premium"].includes(command)) await SendPremiumMessage(msg, options);
+    if(["help", "info"].includes(command)) {
+        await SendHelpMessage(msg, options);
+        return;
+    }
+    if(["upgrade", "premium"].includes(command)){
+        await SendPremiumMessage(msg, options);
+        return;
+    }
 
     // Premium customizable commands
     const Channel = await GetChannel(msg.guildId, msg.channelId);

@@ -25,7 +25,7 @@ class Preference {
 }
 
 Preference.prototype.initialize = (subreddits: string[] = [
-    "gardening", "cooking", "wholesomememes", "youngpeopleyoutube"
+    "comics", "holdmyredbull", "wholesomememes", "youngpeopleyoutube"
 ]): Preference => {
         const parsed_subreddits = {};
 
@@ -44,7 +44,7 @@ Preference.prototype.initialize = (subreddits: string[] = [
             allow_nsfw: false,
             allow_text: true,
             allow_image: true,
-            allow_video: false,
+            allow_video: true,
             voters: true,
             administrators: { users: [], roles: [] },
             reactions: {

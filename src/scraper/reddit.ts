@@ -39,7 +39,7 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
 
         let type =
             PostData.post_hint == 'image' ? 'image':
-            //PostData.is_video ? 'video':
+            PostData.is_video ? 'video':
             PostData.is_self ? 'text':
             undefined;
 

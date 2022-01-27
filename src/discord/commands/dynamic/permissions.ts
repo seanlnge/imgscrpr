@@ -1,5 +1,5 @@
 import * as Discord from 'discord.js'
-import { GetChannel } from '../../../database/preference';
+import { GetChannel, UpdateChannel } from '../../../database/preference';
 
 export async function UserIsAdmin(msg: Discord.Message, user_id) {
     const Channel = await GetChannel(msg.guildId, msg.channelId);
@@ -11,12 +11,13 @@ export async function UserIsAdmin(msg: Discord.Message, user_id) {
 }
 async function add(msg: Discord.Message, options: string[]) {
     if(!options[0]) options[0] = '';
-    if(!['<@!', '<@&'].includes(options[0].slice(0, 3))) {
+    if(options[0].slice(0, 2) != "<@") {
         return await msg.reply(`${options[0]} is not a valid parameter. Add a user/role by pinging them`);
     }
 
-    const is_role = options[0][2] == '&'; // <@&1234> pings a role, <@!1234> pings a user
-    const data = options[0].slice(3, -1); // Takes the 1234 from <@!1234>
+    const is_role = options[0][2] == '&'; // <@&1234> pings a role, <@!1234> or <@1234> pings a user
+    const is_raw = !!parseInt(options[0][2]);
+    const data = options[0].slice(is_raw ? 2 : 3, -1); // Takes the 1234 from <@!1234>
     const Channel = await GetChannel(msg.guildId, msg.channelId);
 
     // Roles
@@ -25,6 +26,7 @@ async function add(msg: Discord.Message, options: string[]) {
             return await msg.reply(`Users with that role are already administrators`);
         }
         Channel.channel.administrators.roles.push(data);
+        await UpdateChannel(msg.guildId, msg.channelId);
         return await msg.reply(`Users with that role are now administrators`);
     }
     
@@ -34,6 +36,7 @@ async function add(msg: Discord.Message, options: string[]) {
             return await msg.reply(`That user is already an administrator`);
         }
         Channel.channel.administrators.users.push(data);
+        await UpdateChannel(msg.guildId, msg.channelId);
         return await msg.reply(`That user is now an administrator`);
     }
 }
@@ -55,6 +58,7 @@ async function remove(msg: Discord.Message, options: string[]) {
         }
         let index = Channel.channel.administrators.roles.findIndex(a => a == data);
         Channel.channel.administrators.roles.splice(index);
+        await UpdateChannel(msg.guildId, msg.channelId);
         return await msg.reply(`Users with that role are no longer administrators`);
     }
     
@@ -65,6 +69,7 @@ async function remove(msg: Discord.Message, options: string[]) {
         }
         let index = Channel.channel.administrators.roles.findIndex(a => a == data);
         Channel.channel.administrators.users.splice(index);
+        await UpdateChannel(msg.guildId, msg.channelId);
         return await msg.reply(`That user is no longer an administrator`);
     }
 }

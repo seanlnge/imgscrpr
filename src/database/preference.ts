@@ -25,7 +25,7 @@ class Preference {
 }
 
 Preference.prototype.initialize = (subreddits: string[] = [
-    "worldnews", "copypasta", "memes", "gayspiderbrothel", "dankvideos"
+    "gardening", "cooking", "wholesomememes", "youngpeopleyoutube"
 ]): Preference => {
         const parsed_subreddits = {};
 

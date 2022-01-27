@@ -25,7 +25,7 @@ class Preference {
 }
 
 Preference.prototype.initialize = (subreddits: string[] = [
-    "comics", "holdmyredbull", "wholesomememes", "youngpeopleyoutube"
+    "comics", "holdmyredbull", "casualconversation", "jokes"
 ]): Preference => {
         const parsed_subreddits = {};
 
@@ -45,6 +45,7 @@ Preference.prototype.initialize = (subreddits: string[] = [
             allow_text: true,
             allow_image: true,
             allow_video: true,
+            extra_commands: true,
             voters: true,
             administrators: { users: [], roles: [] },
             reactions: {
@@ -69,6 +70,7 @@ export type ChannelPreference = {
     allow_text: boolean,
     allow_image: boolean,
     allow_video: boolean,
+    extra_commands: boolean,
     administrators: { users: string[], roles: string[] },
     reactions: { [key: string]: number }
 }

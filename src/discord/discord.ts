@@ -28,7 +28,7 @@ Client.on("ready", () => {
     });
 });
 
-Client.on("messageCreate", async msg => {
+Client.on("messageCreate", async (msg): Promise<any> => {
     if(msg.author.bot) return;
     if(!['i.', 'I.'].includes(msg.content.trim().slice(0, 2))) return;
 
@@ -37,36 +37,39 @@ Client.on("messageCreate", async msg => {
     const options = message.slice(1).map(x => x.toLowerCase());
 
     // Base commands
-    if(["help", "info"].includes(command)) {
-        await SendHelpMessage(msg, options);
-        return;
-    }
-    if(["upgrade", "premium"].includes(command)){
-        await SendPremiumMessage(msg, options);
-        return;
-    }
+    if(["help", "info"].includes(command)) return await SendHelpMessage(msg, options);
+    if(["upgrade", "premium"].includes(command)) return await SendPremiumMessage(msg, options);
 
     // Premium customizable commands
     const Channel = await GetChannel(msg.guildId, msg.channelId);
-
-    if(!Channel.channel.administrators.users.includes(msg.author.id)
-    && !msg.member.roles.cache.hasAny(...Channel.channel.administrators.roles)
-    && !msg.member.permissions.has("ADMINISTRATOR")) {
-        await msg.reply("You don't have valid administrator permissions!");
-        return;
+    const premium = await ChannelIsPremium(msg.guildId, msg.channelId);
+    const admin = Channel.channel.administrators.users.includes(msg.author.id)
+        || msg.member.roles.cache.hasAny(...Channel.channel.administrators.roles)
+        || msg.member.permissions.has("ADMINISTRATOR"); 
+      
+    // Read only commands
+    if(!Channel.channel.extra_commands && !admin) return await msg.reply("You don't have valid administrator permissions!");
+    
+    if(command == "send") return await SendPost(msg, options);
+    if(premium) {     
+        if(command == "subs" || command == "subreddits") return await Subreddits(msg, options);
+        if(command == "stats" || command == "statistics") return await Stats(msg);
     }
 
-    if(command == "add") await AddSubreddit(msg, options);
-    if(command == "remove") await RemoveSubreddit(msg, options);
-    if(command == "send") await SendPost(msg, options);
-    if(command == "reset") await Reset(msg);
-    if(command == "settings" || command == "options") await SendSettings(msg);
-    if(command == "admin" || command == "admins") await Administrators(msg, options); 
+    // Write commands
+    if(!admin) return await msg.reply("You don't have valid administrator permissions!");
 
-    if(!await ChannelIsPremium(msg.guildId, msg.channelId)) return;
-    if(command == "stats" || command == "statistics") await Stats(msg);
-    if(command == "subs" || command == "subreddits") await Subreddits(msg, options);
-    if(command == "reactions" || command == "reaction") await Reactions(msg, options);
+    if(command == "add") return await AddSubreddit(msg, options);
+    if(command == "remove") return await RemoveSubreddit(msg, options);
+    if(command == "reset") return await Reset(msg);
+    if(command == "settings" || command == "options") return await SendSettings(msg);
+    if(command == "admin" || command == "admins") return await Administrators(msg, options); 
+
+    if(premium) {
+        if(command == "stats" || command == "statistics") return await Stats(msg);
+        if(command == "subs" || command == "subreddits") return await Subreddits(msg, options);
+        if(command == "reactions" || command == "reaction") return await Reactions(msg, options);
+    }
 });
 
 // For adding members to premium if Patreon bot gives them role

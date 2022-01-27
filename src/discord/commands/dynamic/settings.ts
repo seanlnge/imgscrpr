@@ -3,23 +3,27 @@ import { GetChannel, UpdateChannel } from '../../../database/preference'
 import { UserIsAdmin } from './permissions';
 
 const settings = {
-    "allow_nsfw": ["Allow NSFW Posts", async (response: Discord.Message) => {
+    "allow_nsfw": ["Allow NSFW Posts", "...", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_nsfw = !Channel.channel.allow_nsfw;
     }],
-    "allow_text": ["Allow Text Posts", async (response: Discord.Message) => {
+    "allow_text": ["Allow Text Posts", "In case you _actually_ enjoy reading", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_text = !Channel.channel.allow_text;
     }],
-    "allow_image": ["Allow Image Posts", async (response: Discord.Message) => {
+    "allow_image": ["Allow Image Posts", "The ~~best~~ default Imgscrpr media format", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_image = !Channel.channel.allow_image;
     }],
-    "allow_video": ["Allow Video Posts", async (response: Discord.Message) => {
+    "allow_video": ["Allow Video Posts", "No audio, but still cool", async (response: Discord.Message) => {
         const Channel = await GetChannel(response.guildId, response.channelId);
         Channel.channel.allow_video = !Channel.channel.allow_video;
     }],
-    "done": ["Done", async (response: Discord.Message) => {
+    "extra_commands": ["Non-Admin Permissions", "Allows non-admin users to do `i.send` and other read-only commands", async (response: Discord.Message) => {
+        const Channel = await GetChannel(response.guildId, response.channelId);
+        Channel.channel.extra_commands = !Channel.channel.extra_commands;
+    }],
+    "done": ["Done", "Are you?", async (response: Discord.Message) => {
         await UpdateChannel(response.guildId, response.channelId);
         await response.delete();
     }]
@@ -46,7 +50,7 @@ export async function SendSettings(msg: Discord.Message) {
             let value = Channel.channel[setting] == undefined ? undefined : Channel.channel[setting].toString();
             value = value ? ' - ' + value[0].toUpperCase() + value.slice(1) : '';
 
-            embed.addField(name + value, '⠀');//settings[setting][1]);
+            embed.addField(name + value, settings[setting][1] + '\n\u2800');
         }
         
         return embed;
@@ -83,7 +87,7 @@ export async function SendSettings(msg: Discord.Message) {
             return;
         }
         
-        await settings[Object.keys(settings)[index]][1](response);
+        await settings[Object.keys(settings)[index]][2](response);
         
         // Remove reaction to allow for repeated reactions
         await response.edit({ embeds: [await make_embed(index)] }).catch(() => /* ok? dont care? */{});

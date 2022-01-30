@@ -22,16 +22,14 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
         embed.description = `Thanks for recognition, but sending API calls is expensive\n\n`
                           + `Please wait **${Math.ceil(time_left/1000)} seconds** or upgrade to our premium version`;
-        await msg.channel.send({ embeds: [embed] });
-        return;
+        return await msg.channel.send({ embeds: [embed] }).catch(err => undefined);
     }
     
     if(Premium && Date.now() - Channel.channel.last_accessed < parseFloat(process.env.PREMIUM_WAIT_TIME_MS)) {
         let time_left = 1000 - (Date.now() - Channel.channel.last_accessed);
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
         embed.description =`Please wait **${time_left} milliseconds**`;
-        await msg.channel.send({ embeds: [embed] });
-        return;
+        return await msg.channel.send({ embeds: [embed] }).catch(err => undefined);
     }
     
     const Post: (Post | string) = await (async () => {
@@ -39,15 +37,8 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         return await ScrapeFromFeed(msg.guildId, msg.channelId);
     })();
 
-    if(typeof Post == "string") {
-        await msg.reply(Post);
-        return;
-    }
-
-    if(!Post) {
-        await msg.reply("We had some issues, please try again");
-        return;
-    }
+    if(typeof Post == "string") return await msg.reply(Post).catch(err => err);
+    if(!Post) return await msg.reply("We had some issues, please try again").catch(err => err);
 
     // Create embeded message
     const embed = new Discord.MessageEmbed();
@@ -81,13 +72,14 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         embed.addField(Post.title, Post.data || '\u2800');
     }
 
-    const Message = await msg.channel.send(data);
+    const Message = await msg.channel.send(data).catch(err => undefined);
+    if(!Message) return;
     
     // Send all reactions
     for(const reaction in Channel.channel.reactions) {
-        await Message.react(reaction);
+        await Message.react(reaction).catch(err => undefined);
     }
-    await Message.react('❌')
+    await Message.react('❌').catch(err => undefined);
 
     // Get/create subreddit data in channel preference
     if(!(Post.subreddit in Channel.subreddits)) {
@@ -105,12 +97,13 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         filter: reaction => reaction.emoji.name in Channel.channel.reactions || reaction.emoji.name == "❌",
         time: 1200000,
         dispose: true,
-    });
+    }).catch(err => undefined);
+    if(!Collector) return;
 
     // On reaction add
     Collector.on('collect', async (reaction, user) => {
         if(reaction.emoji.name == "❌" && await UserIsAdmin(msg, user.id)) {
-            return await Message.delete();
+            return await Message.delete().catch(err => undefined);
         }
         let score = Channel.channel.reactions[reaction.emoji.name];
         if(!score) return;

@@ -3,6 +3,7 @@ import * as Discord from "discord.js";
 import { GetUser } from "./static";
 
 export async function UpdateUser(user_id: string, data: { [key: string]: string }[]) {
+    // Remove user from premium given no premium roles
     if(data.length == 0) {
         return await Client.db("premium").collection(user_id).drop();
     }
@@ -42,21 +43,21 @@ export async function UpdateUser(user_id: string, data: { [key: string]: string 
 }
 
 export async function Add(msg: Discord.Message, options: string[]) {
-    if(options.length > 3) return await msg.reply(`These other arguments don't do anything: ${options.slice(2).join(', ')}`);
-    if(options.length == 0) return await msg.reply("You forgot to add a channel ID! The correct syntax is `i.premium add channel|server {guild_id}? {channel_id}?`");
+    if(options.length > 3) return await msg.reply(`These other arguments don't do anything: ${options.slice(2).join(', ')}`).catch(() => undefined);
+    if(options.length == 0) return await msg.reply("You forgot to add a channel ID! The correct syntax is `i.premium add channel|server {guild_id}? {channel_id}?`").catch(() => undefined);
 
     const User = await GetUser(msg);
 
     if(options[0] == "server") {
         const id = options[1] || msg.guildId;
-        if(options.length > 2) return await msg.reply(`This argument doesn't do anything: ` + options[2]);
+        if(options.length > 2) return await msg.reply(`This argument doesn't do anything: ` + options[2]).catch(() => undefined);
 
         if(!User.subscriptions.some(a => !a.guild_id && a.type == "server")) {
-            return await msg.reply("You have used all of your premium server slots! Either remove a server or upgrade your subscription tier");
+            return await msg.reply("You have used all of your premium server slots! Either remove a server or upgrade your subscription tier").catch(() => undefined);
         }
 
         if((await Client.db("servers").collection(id).findOne({ premium: { $eq: true } }))) {
-            return await msg.reply("This server is already premium");
+            return await msg.reply("This server is already premium").catch(() => undefined);
         }
         User.subscriptions.find(a => a.type == "server" && !a.guild_id).guild_id = id;
 
@@ -67,7 +68,7 @@ export async function Add(msg: Discord.Message, options: string[]) {
             { upsert: true }
         );
 
-        return await msg.reply("Successfully added server to premium");
+        return await msg.reply("Successfully added server to premium").catch(() => undefined);
     }
     
     else if(options[0] == "channel") {
@@ -75,12 +76,12 @@ export async function Add(msg: Discord.Message, options: string[]) {
         const channel_id = options[2] || msg.channelId;
 
         if(!User.subscriptions.some(a => !a.channel_id && a.type == "channel")) {
-            return await msg.reply("You have used all of your premium channel slots! Either remove a channel or upgrade your subscription tier");
+            return await msg.reply("You have used all of your premium channel slots! Either remove a channel or upgrade your subscription tier").catch(() => undefined);
         }
 
         const Channel = await GetChannel(guild_id, channel_id);
         if(Channel.channel.premium) {
-            return await msg.reply("That channel is already premium");
+            return await msg.reply("That channel is already premium").catch(() => undefined);
         }
         let data = User.subscriptions.find(a => a.type == "channel" && !a.channel_id);
         data.guild_id = guild_id;
@@ -89,24 +90,24 @@ export async function Add(msg: Discord.Message, options: string[]) {
 
         Channel.channel.premium = true;
         await UpdateChannel(guild_id, channel_id);
-        return await msg.reply(`Successfully added <#${channel_id}> to premium`);
+        return await msg.reply(`Successfully added <#${channel_id}> to premium`).catch(() => undefined);
     }
     
-    else return await msg.reply(`"${options[0]}" is not a valid premium community. Choose from either "channel" or "server"`);
+    else return await msg.reply(`"${options[0]}" is not a valid premium community. Choose from either "channel" or "server"`).catch(() => undefined);
 }
 
 export async function Remove(msg: Discord.Message, options: string[]) {
-    if(options.length > 3) return await msg.reply(`These other arguments don't do anything: ${options.slice(1).join(', ')}`);
-    if(options.length == 0) return await msg.reply("You forgot to add a channel ID! The correct syntax is `i.premium remove channel|server`");
+    if(options.length > 3) return await msg.reply(`These other arguments don't do anything: ${options.slice(1).join(', ')}`).catch(() => undefined);
+    if(options.length == 0) return await msg.reply("You forgot to add a channel ID! The correct syntax is `i.premium remove channel|server`").catch(() => undefined);
 
     const User = await GetUser(msg);
 
     if(options[0] == "server") {
         const id = options[1] || msg.guildId;
-        if(options.length > 2) return await msg.reply(`This argument doesn't do anything: ` + options[2]);
+        if(options.length > 2) return await msg.reply(`This argument doesn't do anything: ` + options[2]).catch(() => undefined);
 
         if(!User.subscriptions.find(a => a.type == "server" && a.guild_id == id)) {
-            return await msg.reply("You haven't set this server to premium");
+            return await msg.reply("You haven't set this server to premium").catch(() => undefined);
         }
 
         User.subscriptions.find(a => a.type == "server" && a.guild_id == id).guild_id = undefined;
@@ -114,14 +115,14 @@ export async function Remove(msg: Discord.Message, options: string[]) {
         await Client.db("premium").collection(msg.author.id).updateOne({}, { $set: User });
         await Client.db("servers").collection(id).updateOne({ premium: { $eq: true } }, { $set: { premium: false }}, { upsert: true });
 
-        return await msg.reply(`Successfully removed this server from premium`);
+        return await msg.reply(`Successfully removed this server from premium`).catch(() => undefined);
     } else {
-        if(options.length == 2) return await msg.reply('You need to specify a channel_id! The proper syntax is `i.premium add channel {server_id} {channel_id}`')
+        if(options.length == 2) return await msg.reply('You need to specify a channel_id! The proper syntax is `i.premium add channel {server_id} {channel_id}`').catch(() => undefined);
         const guild_id = options[1] || msg.guildId;
         const channel_id = options[2] || msg.channelId;
 
         if(!User.subscriptions.find(a => a.type == "channel" && a.channel_id == channel_id)) {
-            return await msg.reply("You haven't set this channel to premium");
+            return await msg.reply("You haven't set this channel to premium").catch(() => undefined);
         }
 
         let channel = User.subscriptions.find(a => a.type == "channel" && a.channel_id == channel_id);
@@ -133,7 +134,7 @@ export async function Remove(msg: Discord.Message, options: string[]) {
         Channel.channel.premium = false;
         await UpdateChannel(guild_id, channel_id);
 
-        return await msg.reply(`Successfully removed <#${channel_id}> from premium`);
+        return await msg.reply(`Successfully removed <#${channel_id}> from premium`).catch(() => undefined);
     }
 }
 
@@ -158,16 +159,19 @@ export async function List(msg: Discord.Message) {
     }
 
     let index = 0;
-    const response = await msg.channel.send({ embeds: [await make_embed(index)] });
-    await response.react("🔺");
-    await response.react("🔻");
-    await response.react("🟠");
+    const response = await msg.channel.send({ embeds: [await make_embed(index)] }).catch(() => undefined);
+    if(!response) return;
+
+    await response.react("🔺").catch(() => undefined);
+    await response.react("🔻").catch(() => undefined);
+    await response.react("🟠").catch(() => undefined);
     // Collect reactions
     const Collector = response.createReactionCollector({
         filter: (reaction, user) => !user.bot && ['🔺', '🔻', '🟠'].includes(reaction.emoji.name),
         time: 120000,
         dispose: true,
-    });
+    }).catch(() => undefined);
+    if(!Collector) return;
 
     // On reaction add
     Collector.on('collect', async (reaction, user) => {
@@ -188,8 +192,8 @@ export async function List(msg: Discord.Message) {
         }
 
         if(index == active_servers) {
-            await msg.delete();
-            return await response.delete();
+            await msg.delete().catch(() => undefined);
+            return await response.delete().catch(() => undefined);
         }
 
         let data = User.subscriptions[index];

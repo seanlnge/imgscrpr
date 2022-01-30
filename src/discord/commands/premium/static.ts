@@ -38,10 +38,10 @@ export async function Help(msg: Discord.Message, options: string[]) {
 
     // Detailed help message for particular command
     if(options.length > 1) {
-        if(options[0] != "help") return await msg.reply(`"${options[0]}" is not a premium command`);
+        if(options[0] != "help") return await msg.reply(`"${options[0]}" is not a premium command`).catch(() => undefined);
         let command = HelpMessage.find(a => a.name == options[1]);
-        if(!command) return await msg.reply(`"${options[1]}" is not a premium command`);
-        if(options.length != 2) return await msg.reply(`These arguments do not do anything: ${options.slice(2).join(', ')}`);
+        if(!command) return await msg.reply(`"${options[1]}" is not a premium command`).catch(() => undefined);
+        if(options.length != 2) return await msg.reply(`These arguments do not do anything: ${options.slice(2).join(', ')}`).catch(() => undefined);
 
         embed.setTitle(command.command);
         embed.setDescription(command.full);
@@ -54,7 +54,7 @@ export async function Help(msg: Discord.Message, options: string[]) {
         HelpMessage.forEach(({ command, description }) => embed.addField('⠀', `**\`${command}\`** - ${description}`));
         embed.addField('\n⠀', 'Type `i.help {command}` for a detailed explanation\n[Add Imgscrpr to your Discord server!](https://discord.com/api/oauth2/authorize?client_id=904018497657532447&permissions=532576463936&scope=bot)');
     }
-    await msg.reply({ embeds: [embed] });
+    await msg.reply({ embeds: [embed] }).catch(() => undefined);
 }
 
 export async function Display(msg: Discord.Message) {
@@ -62,7 +62,7 @@ export async function Display(msg: Discord.Message) {
     embed.setTitle(`${msg.author.username}'s Imgscrpr Premium`);
     
     const { subscriptions, unix } = await GetUser(msg);
-    if(!subscriptions || !unix) return await msg.reply("Your premium isn't setup yet");
+    if(!subscriptions || !unix) return await msg.reply("Your premium isn't setup yet").catch(() => undefined);
 
     embed.setDescription(`Member since ${(new Date(unix)).toDateString().slice(4)}\n`);
 
@@ -70,7 +70,7 @@ export async function Display(msg: Discord.Message) {
     embed.addField("Unused Premium Slots", (subscriptions.length - active_channels).toString(), true);
     embed.addField("Active Premium Slots", active_channels.toString(), true);
 
-    await msg.reply({ embeds: [embed] });
+    await msg.reply({ embeds: [embed] }).catch(() => undefined);
 }
 
 export async function Stats(msg: Discord.Message) {
@@ -90,12 +90,12 @@ export async function Stats(msg: Discord.Message) {
     let score_ratio = Statistics.score / Statistics.votes;
     embed.addField("Score/Votes Ratio", score_ratio.toString());
 
-    return await msg.reply({ embeds: [embed] });
+    return await msg.reply({ embeds: [embed] }).catch(() => undefined);
 }
 
 export async function Subreddits(msg: Discord.Message, options: string[]) {
     const amount_str = options[0] || "5";
-    if(options.length > 1) return await msg.reply(`These other arguments don't do anything: ${options.slice(1).join(', ')}`);
+    if(options.length > 1) return await msg.reply(`These other arguments don't do anything: ${options.slice(1).join(', ')}`).catch(() => undefined);
 
     const Channel = await GetChannel(msg.guildId, msg.channelId);
     const embed = new Discord.MessageEmbed({ color: "#d62e00" });
@@ -104,8 +104,9 @@ export async function Subreddits(msg: Discord.Message, options: string[]) {
     embed.setTitle(`Top Subreddits for #${channel_name}`);
     
     const amount = parseInt(amount_str);
-    if(isNaN(amount)) return await msg.reply(`"${amount_str}" is not a number`);
+    if(isNaN(amount)) return await msg.reply(`"${amount_str}" is not a number`).catch(() => undefined);
 
+    // A set doesn't allow repeated items
     const subreddits: Set<string> = new Set();
     for(let sub in Channel.subreddits) {
         subreddits.add(sub);
@@ -120,5 +121,5 @@ export async function Subreddits(msg: Discord.Message, options: string[]) {
     for(const sub of top_subs) {
         embed.addField(`r/${sub.subreddit}`, sub.score.toPrecision(3));
     }
-    return await msg.reply({ embeds: [embed] });
+    return await msg.reply({ embeds: [embed] }).catch(() => undefined);
 }

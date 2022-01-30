@@ -25,7 +25,7 @@ const settings = {
     }],
     "done": ["Done", "Are you?", async (response: Discord.Message) => {
         await UpdateChannel(response.guildId, response.channelId);
-        await response.delete();
+        await response.delete().catch(() => undefined);
     }]
 };
 
@@ -35,7 +35,7 @@ const settings = {
  */
 export async function SendSettings(msg: Discord.Message) {
     const Channel = await GetChannel(msg.guildId, msg.channelId);
-    if(!UserIsAdmin(msg, msg.author.id)) return await msg.reply("You need to be an administrator to edit settings!");
+    if(!UserIsAdmin(msg, msg.author.id)) return await msg.reply("You need to be an administrator to edit settings!").catch(() => undefined);
 
     const make_embed = async (index: number) => {
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
@@ -57,10 +57,11 @@ export async function SendSettings(msg: Discord.Message) {
     }
 
     let index = 0;
-    const response = await msg.channel.send({ embeds: [await make_embed(index)] });
-    await response.react("🔺");
-    await response.react("🔻");
-    await response.react("↔️");
+    const response = await msg.channel.send({ embeds: [await make_embed(index)] }).catch(() => undefined);
+    if(!response) return;
+    await response.react("🔺").catch(() => undefined);
+    await response.react("🔻").catch(() => undefined);
+    await response.react("↔️").catch(() => undefined);
 
     // Collect reactions
     const Collector = response.createReactionCollector({

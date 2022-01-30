@@ -48,7 +48,7 @@ Client.on("messageCreate", async (msg): Promise<any> => {
         || msg.member.permissions.has("ADMINISTRATOR"); 
       
     // Read only commands
-    if(!Channel.channel.extra_commands && !admin) return await msg.reply("You don't have valid administrator permissions!");
+    if(!Channel.channel.extra_commands && !admin) return await msg.reply("You don't have valid administrator permissions!").catch(() => undefined);
     
     if(command == "send") return await SendPost(msg, options);
     if(premium) {     
@@ -57,7 +57,7 @@ Client.on("messageCreate", async (msg): Promise<any> => {
     }
 
     // Write commands
-    if(!admin) return await msg.reply("You don't have valid administrator permissions!");
+    if(!admin) return await msg.reply("You don't have valid administrator permissions!").catch(() => undefined);
 
     if(command == "add") return await AddSubreddit(msg, options);
     if(command == "remove") return await RemoveSubreddit(msg, options);

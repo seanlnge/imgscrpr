@@ -14,12 +14,15 @@ import { GetChannel, UpdateChannel } from "../../../database/preference";
     embed.setTitle("Add Scoring Reaction in #" + msg.guild.channels.cache.get(msg.channelId).name);
     embed.setDescription("React to this message embed with your desired reaction");
     embed.addField("Score", score.toString());
-    const response = await msg.reply({ embeds: [embed] });
+    const response = await msg.reply({ embeds: [embed] }).catch(() => undefined);
+    if(!response) return;
     
     const Collector = response.createReactionCollector({
         time: 120000,
         dispose: true
-    });
+    }).catch(() => undefined);
+    if(!Collector) return;
+
     Collector.on("collect", async (reaction, user) => {
         // User must be admin to allow for changes
         const member = msg.guild.members.cache.find(a => a.id == msg.author.id);
@@ -30,8 +33,8 @@ import { GetChannel, UpdateChannel } from "../../../database/preference";
         ) return;
 
         reactions[reaction.emoji.name] = score;
-        await msg.delete();
-        await response.delete();
+        await msg.delete().catch(() => undefined);
+        await response.delete().catch(() => undefined);
         await UpdateChannel(msg.guildId, msg.channelId);
     });
     Collector.on("end", async () => {
@@ -75,12 +78,13 @@ async function list_reactions(msg: Discord.Message) {
     }
 
     let index = 0;
-    const response = await msg.channel.send({ embeds: [make_embed(index)] });
+    const response = await msg.channel.send({ embeds: [make_embed(index)] }).catch(() => undefined);
+    if(!response) return;
 
     // React with interactive panel
-    await response.react("🔺");
-    await response.react("🔻");
-    await response.react("↔️");
+    await response.react("🔺").catch(() => undefined);
+    await response.react("🔻").catch(() => undefined);
+    await response.react("↔️").catch(() => undefined);
 
     // Collect reactions
     const Collector = response.createReactionCollector({
@@ -104,14 +108,14 @@ async function list_reactions(msg: Discord.Message) {
             }
 
             // Edit message and delete reaction
-            await response.edit({ embeds: [make_embed(index)] });
-            await response.reactions.resolve(reaction.emoji.name).users.remove(user.id);
+            await response.edit({ embeds: [make_embed(index)] }).catch(() => undefined);
+            await response.reactions.resolve(reaction.emoji.name).users.remove(user.id).catch(() => undefined);
             return;
         }
 
         if(index == keys.length) {
-            await msg.delete();
-            await response.delete();
+            await msg.delete().catch(() => undefined);
+            await response.delete().catch(() => undefined);
         } else {
             delete reactions[keys[index]];
             keys.splice(index, 1);
@@ -141,16 +145,16 @@ export async function Reactions(msg: Discord.Message, options: string[]) {
             !Channel.channel.administrators.users.includes(msg.author.id)
             && !member.roles.cache.hasAny(...Channel.channel.administrators.roles)
             && !member.permissions.has("ADMINISTRATOR")
-        ) return await msg.reply("You need to be an administrator to edit reactions!");
+        ) return await msg.reply("You need to be an administrator to edit reactions!").catch(() => undefined);
 
-        if(!options[1]) return await msg.reply("The proper command to add a reaction is `i.reactions add {score}`");
+        if(!options[1]) return await msg.reply("The proper command to add a reaction is `i.reactions add {score}`").catch(() => undefined);
         let score = parseFloat(options[1]);
-        if(isNaN(score)) return await msg.reply(`"${options[1]}" is not a valid score`);
+        if(isNaN(score)) return await msg.reply(`"${options[1]}" is not a valid score`).catch(() => undefined);
         return await add_reaction(msg, score);
     }
 
     if(options.length) {
-        return await msg.reply(`These arguments don't do anything: "${options.join(', ')}"`);
+        return await msg.reply(`These arguments don't do anything: "${options.join(', ')}"`).catch(() => undefined);
     }
     return await list_reactions(msg);
 }

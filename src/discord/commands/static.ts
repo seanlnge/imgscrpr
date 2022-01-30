@@ -48,7 +48,7 @@ export async function SendHelpMessage(msg: Discord.Message, options: string[]) {
         }
     }
     embed.addField('\n⠀', 'Type `i.help {command}` for a detailed explanation\n[Add Imgscrpr to your Discord server!](https://discord.com/api/oauth2/authorize?client_id=904018497657532447&permissions=27712&scope=bot)');
-    await msg.reply({ embeds: [embed] });
+    await msg.reply({ embeds: [embed] }).catch(() => undefined);
 }
 
 
@@ -78,5 +78,5 @@ export async function SendPremiumMessage(msg: Discord.Message, options: string[]
     embed.addField("New Commands", "From statistics to meticulous customizations, premium adds many new commands to improve community experience");
     embed.setFooter("Although buying premium enhances your community's experience as well as supporting us, it isn't necessary, and we will still appreciate you for using Imgscrpr regardless");
 
-    return await msg.reply({ embeds: [embed] });
+    return await msg.reply({ embeds: [embed] }).catch(() => undefined);
 }

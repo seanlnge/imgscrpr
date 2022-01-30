@@ -8,7 +8,7 @@ import { GetChannel, UpdateChannel, ResetChannel } from '../../../database/prefe
  */
 export async function AddSubreddit(msg: Discord.Message, options: string[]) {
     if(options.length == 0) {
-        await msg.reply("Subreddit name needs to be included: `i.add subreddit`");
+        await msg.reply("Subreddit name needs to be included: `i.add subreddit`").catch(() => undefined);;
         return;
     }
 
@@ -25,7 +25,7 @@ export async function AddSubreddit(msg: Discord.Message, options: string[]) {
 
     // Update in database and finalize
     await UpdateChannel(msg.guildId, msg.channelId);
-    await msg.channel.send(`**r/${subreddit}** has been added to the personalized feed`);
+    await msg.channel.send(`**r/${subreddit}** has been added to the personalized feed`).catch(() => undefined);;
 }
 
 /**
@@ -35,7 +35,7 @@ export async function AddSubreddit(msg: Discord.Message, options: string[]) {
  */
 export async function RemoveSubreddit(msg: Discord.Message, options: string[]) {
     if(options.length == 0) {
-        msg.reply("Subreddit name needs to be included: `i.remove subreddit`");
+        msg.reply("Subreddit name needs to be included: `i.remove subreddit`").catch(() => undefined);;
         return;
     }
 
@@ -46,7 +46,7 @@ export async function RemoveSubreddit(msg: Discord.Message, options: string[]) {
 
     // Update in database and finalize
     await UpdateChannel(msg.guildId, msg.channelId);
-    await msg.channel.send(`**r/${subreddit}** will no longer show up in the feed`);
+    await msg.channel.send(`**r/${subreddit}** will no longer show up in the feed`).catch(() => undefined);;
 }
 
 /**
@@ -55,5 +55,5 @@ export async function RemoveSubreddit(msg: Discord.Message, options: string[]) {
  */
 export async function Reset(msg: Discord.Message) {
     await ResetChannel(msg.guildId, msg.channelId);
-    await msg.channel.send("Channel reset");
+    await msg.channel.send("Channel reset").catch(() => undefined);;
 }

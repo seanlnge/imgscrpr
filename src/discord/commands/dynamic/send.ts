@@ -97,8 +97,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         filter: reaction => reaction.emoji.name in Channel.channel.reactions || reaction.emoji.name == "❌",
         time: 1200000,
         dispose: true,
-    }).catch(err => undefined);
-    if(!Collector) return;
+    });
 
     // On reaction add
     Collector.on('collect', async (reaction, user) => {

@@ -170,8 +170,7 @@ export async function List(msg: Discord.Message) {
         filter: (reaction, user) => !user.bot && ['🔺', '🔻', '🟠'].includes(reaction.emoji.name),
         time: 120000,
         dispose: true,
-    }).catch(() => undefined);
-    if(!Collector) return;
+    });
 
     // On reaction add
     Collector.on('collect', async (reaction, user) => {

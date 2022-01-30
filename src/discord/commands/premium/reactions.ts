@@ -20,8 +20,7 @@ import { GetChannel, UpdateChannel } from "../../../database/preference";
     const Collector = response.createReactionCollector({
         time: 120000,
         dispose: true
-    }).catch(() => undefined);
-    if(!Collector) return;
+    });
 
     Collector.on("collect", async (reaction, user) => {
         // User must be admin to allow for changes

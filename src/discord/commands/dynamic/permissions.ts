@@ -11,7 +11,7 @@ export async function UserIsAdmin(msg: Discord.Message, user_id) {
 }
 async function add(msg: Discord.Message, options: string[]) {
     if(!options[0]) options[0] = '';
-    if(options[0].slice(0, 2) != "<@") {
+    if(options[0].slice(0, 2) != "<@" || options[0].slice(-1) != ">") {
         return await msg.reply(`${options[0]} is not a valid parameter. Add a user/role by pinging them`).catch(() => undefined);;
     }
 

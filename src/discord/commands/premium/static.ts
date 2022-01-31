@@ -22,7 +22,7 @@ export async function GetUser(msg: Discord.Message): Promise<User> {
     const premium = Client.db("premium");
 
     if(await UserIsPremium(id)) {
-        return await premium.collection(id).findOne({}) as User;
+        return await premium.collection(id).findOne({}) as unknown as User;
     }
 }
 

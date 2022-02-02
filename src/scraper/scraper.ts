@@ -29,10 +29,7 @@ export async function ScrapeFromSubreddit(server_id: string, channel_id: string,
         if(!reddit_response.posts.length) return "No posts from this subreddit right now!";
 
         // Verify posts are timely
-        posts = reddit_response.posts.filter(a =>
-            !(Date.now()-a.time*1e3 < 7200e3)
-            && !(sub && (a.id in sub.posts))
-        );
+        posts = reddit_response.posts.filter(a => !(sub && (a.id in sub.posts)));
         after = reddit_response.after;
     }
 

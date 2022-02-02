@@ -33,7 +33,7 @@ export async function GetPosts(preference: ChannelPreference, subreddit: string,
         const Acc = await acc_promise;
         let allowed_nsfw = PostData.over_18 ? preference.allow_nsfw : true;
         let allowed_domain = TrustedDomains.includes(PostData.domain);
-        if(PostData.stickied || !allowed_nsfw) {
+        if(PostData.stickied || !allowed_nsfw || !PostData.subreddit) {
             return Acc;
         }
 

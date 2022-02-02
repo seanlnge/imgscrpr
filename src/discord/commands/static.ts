@@ -22,8 +22,8 @@ export async function SendHelpMessage(msg: Discord.Message, options: string[]) {
     // Detailed help message
     if(options.length) {
         let command = HelpMessage.find(a => a.name == options[0]);
-        if(command.premium && !prem) return await msg.reply(`"${options[0]}" is a premium command! Get premium through \`i.premium\``);
         if(!command) return await msg.reply(`"${options[0]}" is not a command`);
+        if(command.premium && !prem) return await msg.reply(`"${options[0]}" is a premium command! Get premium through \`i.premium\``);
         if(options.length != 1) return await msg.reply(`These arguments do not do anything: ${options.slice(1).join(', ')}`);
 
         embed.setTitle(command.command);

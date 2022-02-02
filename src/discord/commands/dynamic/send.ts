@@ -4,6 +4,7 @@ import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../../scraper/scraper';
 import Post from '../../../post';
 import { ChannelIsPremium } from '../premium/static';
 import { UserIsAdmin } from './permissions';
+import { getJSDocReturnType } from 'typescript';
 
 require('dotenv').config();
 
@@ -72,6 +73,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
         embed.addField(Post.title, Post.data || '\u2800');
     }
 
+    if(!msg.channel) return;
     const Message = await msg.channel.send(data).catch(err => undefined);
     if(!Message) return;
     

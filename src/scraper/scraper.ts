@@ -23,7 +23,7 @@ export async function ScrapeFromSubreddit(server_id: string, channel_id: string,
     let after = undefined;
     
     // Find new posts given others are old
-    while(!posts.length) {
+    for(let i=0; i<10 && !posts.length; i++) {
         let reddit_response = await Reddit.GetPosts(Channel.channel, subreddit, after);
         if(reddit_response.error) return reddit_response.error;
         if(!reddit_response.posts.length) return "No posts from this subreddit right now!";
@@ -31,7 +31,6 @@ export async function ScrapeFromSubreddit(server_id: string, channel_id: string,
         // Verify posts are timely
         posts = reddit_response.posts.filter(a =>
             !(Date.now()-a.time*1e3 < 7200e3)
-            && !(Date.now()-a.time*1e3 > 86400e3)
             && !(sub && (a.id in sub.posts))
         );
         after = reddit_response.after;

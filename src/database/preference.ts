@@ -51,7 +51,8 @@ Preference.prototype.initialize = (subreddits: string[] = [
             reactions: {
                 '🟢': 1,
                 '🔴': -1
-            }
+            },
+            removed: []
         };
 
         const statistics = {
@@ -72,7 +73,8 @@ export type ChannelPreference = {
     allow_video: boolean,
     extra_commands: boolean,
     administrators: { users: string[], roles: string[] },
-    reactions: { [key: string]: number }
+    reactions: { [key: string]: number },
+    removed: string[]
 }
 
 export type Statistics = {

@@ -33,7 +33,7 @@ Client.on("messageCreate", async (msg): Promise<any> => {
     if(!['i.', 'I.'].includes(msg.content.trim().slice(0, 2))) return;
 
     const message = msg.content.slice(2).split(/\s/g).filter(a => a.length != 0);
-    const command = message[0].toLowerCase();
+    const command = (message[0] || '').toLowerCase();
     const options = message.slice(1).map(x => x.toLowerCase());
 
     // Base commands

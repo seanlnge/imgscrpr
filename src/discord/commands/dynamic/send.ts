@@ -5,6 +5,7 @@ import Post from '../../../post';
 import { ChannelIsPremium } from '../premium/static';
 import { UserIsAdmin } from './permissions';
 import { getJSDocReturnType } from 'typescript';
+import { userInfo } from 'os';
 
 require('dotenv').config();
 
@@ -103,6 +104,8 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
 
     // On reaction add
     Collector.on('collect', async (reaction, user) => {
+        if(user.bot) return;
+
         if(reaction.emoji.name == "❌" && await UserIsAdmin(msg, user.id)) {
             return await Message.delete().catch(err => undefined);
         }

@@ -49,10 +49,11 @@ export async function ScrapeFromFeed(server_id: string, channel_id: string): Pro
     // Sort all subreddits in preference database
     let subreddit_set: Set<string> = new Set();
     for(let sub in Channel.subreddits) {
+        if(Channel.channel.removed.includes(sub)) continue;
         subreddit_set.add(sub);
         SubredditConnections(sub).forEach((a: string) => subreddit_set.add(a));
     }
-    let subreddits = Array.from(subreddit_set);
+    let subreddits = Array.from(subreddit_set).filter(a => !Channel.channel.removed.includes(a));
 
     // Rank subreddits from highest score to lowest score
     let parsed_subs = await Promise.all(

@@ -66,8 +66,6 @@ Client.on("messageCreate", async (msg): Promise<any> => {
     if(command == "admin" || command == "admins") return await Administrators(msg, options); 
 
     if(premium) {
-        if(command == "stats" || command == "statistics") return await Stats(msg);
-        if(command == "subs" || command == "subreddits") return await Subreddits(msg, options);
         if(command == "reactions" || command == "reaction") return await Reactions(msg, options);
     }
 });

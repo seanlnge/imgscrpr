@@ -109,11 +109,12 @@ export async function Subreddits(msg: Discord.Message, options: string[]) {
     // A set doesn't allow repeated items
     const subreddits: Set<string> = new Set();
     for(let sub in Channel.subreddits) {
+        if(Channel.channel.removed.includes(sub)) continue;
         subreddits.add(sub);
         SubredditConnections(sub).forEach(a => subreddits.add(a));
     }
     
-    const sub_scores = Array.from(subreddits).map(async x => {
+    const sub_scores = Array.from(subreddits).filter(a => !Channel.channel.removed.includes(a)).map(async x => {
         return { subreddit: x, score: await SubredditScore(msg.guildId, msg.channelId, x) };
     });
     const top_subs = (await Promise.all(sub_scores)).sort((a, b) => b.score - a.score).slice(0, amount);

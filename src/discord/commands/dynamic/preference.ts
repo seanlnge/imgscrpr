@@ -42,6 +42,7 @@ export async function RemoveSubreddit(msg: Discord.Message, options: string[]) {
     const Channel = await GetChannel(msg.guildId, msg.channelId);
     const subreddit = options[0].replace(/(r\/|\/)/g, "");
 
+    Channel.channel.removed.push(subreddit);
     delete Channel.subreddits[subreddit];
 
     // Update in database and finalize

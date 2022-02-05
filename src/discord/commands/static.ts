@@ -47,7 +47,7 @@ export async function SendHelpMessage(msg: Discord.Message, options: string[]) {
             embed.addField("\n`i.premium`", "View the help menu for premium commands");
         }
     }
-    embed.addField('\n⠀', 'Type `i.help {command}` for a detailed explanation\n[Add Imgscrpr to your Discord server!](https://discord.com/api/oauth2/authorize?client_id=904018497657532447&permissions=27712&scope=bot)');
+    embed.addField('\n⠀', 'Type `i.help {command}` for a detailed explanation\n[Add Imgscrpr to your Discord server!](https://discord.com/api/oauth2/authorize?client_id=904018497657532447&permissions=27712&scope=bot)\n[Join our support server!](https://discord.gg/wx8UfHQr48)');
     await msg.reply({ embeds: [embed] }).catch(() => undefined);
 }
 

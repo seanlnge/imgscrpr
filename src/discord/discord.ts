@@ -10,6 +10,7 @@ import { Administrators } from './commands/dynamic/permissions';
 import { ChannelIsPremium, Stats, Subreddits } from './commands/premium/static';
 import { UpdateUser } from './commands/premium/subscription';
 import { Reactions } from './commands/premium/reactions';
+import { Presets } from './commands/premium/presets';
 
 export const Client = new Discord.Client({
     intents: [
@@ -54,26 +55,35 @@ Client.on("messageCreate", async (msg): Promise<any> => {
     if(premium) {     
         if(command == "subs" || command == "subreddits") return await Subreddits(msg, options);
         if(command == "stats" || command == "statistics") return await Stats(msg);
+        if(command == "preset" || command == "presets") return await Presets(msg, options);
     }
 
     // Write commands
-    if(!admin) return await msg.reply("You don't have valid administrator permissions!").catch(() => undefined);
+    if(admin) {
+        if(command == "add") return await AddSubreddit(msg, options);
+        if(command == "remove") return await RemoveSubreddit(msg, options);
+        if(command == "reset") return await Reset(msg);
+        if(command == "settings" || command == "options") return await SendSettings(msg);
+        if(command == "admin" || command == "admins") return await Administrators(msg, options); 
 
-    if(command == "add") return await AddSubreddit(msg, options);
-    if(command == "remove") return await RemoveSubreddit(msg, options);
-    if(command == "reset") return await Reset(msg);
-    if(command == "settings" || command == "options") return await SendSettings(msg);
-    if(command == "admin" || command == "admins") return await Administrators(msg, options); 
-
-    if(premium) {
-        if(command == "reactions" || command == "reaction") return await Reactions(msg, options);
+        if(premium) {
+            if(command == "reactions" || command == "reaction") return await Reactions(msg, options);
+        }
     }
+
+    if(command in Channel.channel.presets) {
+        return await Presets(msg, options, command);
+    }
+
+    return await msg.reply("Unknown command! Try `i.help` or `i.preset list` to find what you're looking for");
 });
 
 // For adding members to premium if Patreon bot gives them role
 const PremiumRoles = {
+    "939991009268494366": Array(5).fill({ type: "server", guild_id: undefined }),
+    "939990869002567711": Array(2).fill({ type: "server", guild_id: undefined }),
     "918282525544157195": [{ type: "server", guild_id: undefined }],
-    "918282364466135041": Array(4).fill({ type: "channel", guild_id: undefined, channel_id: undefined }),
+    "918282364466135041": Array(3).fill({ type: "channel", guild_id: undefined, channel_id: undefined }),
     "918282071275876353": [{ type: "channel", guild_id: undefined, channel_id: undefined }]
 }
 Client.on("guildMemberUpdate", async (prev: Discord.GuildMember, curr: Discord.GuildMember) => {

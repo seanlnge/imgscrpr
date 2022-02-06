@@ -4,8 +4,6 @@ import { ScrapeFromFeed, ScrapeFromSubreddit } from '../../../scraper/scraper';
 import Post from '../../../post';
 import { ChannelIsPremium } from '../premium/static';
 import { UserIsAdmin } from './permissions';
-import { getJSDocReturnType } from 'typescript';
-import { userInfo } from 'os';
 
 require('dotenv').config();
 
@@ -20,7 +18,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     const Premium = await ChannelIsPremium(msg.guildId, msg.channelId);
 
     if(!Premium && Date.now() - Channel.channel.last_accessed < parseFloat(process.env.WAIT_TIME_MS)) {
-        let time_left = 15000 - (Date.now() - Channel.channel.last_accessed);
+        let time_left = parseFloat(process.env.WAIT_TIME_MS) - (Date.now() - Channel.channel.last_accessed);
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
         embed.description = `Thanks for recognition, but sending API calls is expensive\n\n`
                           + `Please wait **${Math.ceil(time_left/1000)} seconds** or upgrade to our premium version`;
@@ -28,7 +26,7 @@ export async function SendPost(msg: Discord.Message, options: string[]) {
     }
     
     if(Premium && Date.now() - Channel.channel.last_accessed < parseFloat(process.env.PREMIUM_WAIT_TIME_MS)) {
-        let time_left = 1000 - (Date.now() - Channel.channel.last_accessed);
+        let time_left = parseFloat(process.env.PREMIUM_WAIT_TIME_MS) - (Date.now() - Channel.channel.last_accessed);
         const embed = new Discord.MessageEmbed({ color: "#d62e00" });
         embed.description =`Please wait **${time_left} milliseconds**`;
         return await msg.channel.send({ embeds: [embed] }).catch(err => undefined);

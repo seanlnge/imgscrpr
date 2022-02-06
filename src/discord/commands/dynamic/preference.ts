@@ -11,6 +11,8 @@ export async function AddSubreddit(msg: Discord.Message, options: string[]) {
         await msg.reply("Subreddit name needs to be included: `i.add subreddit`").catch(() => undefined);;
         return;
     }
+    
+    if(!/^[a-z0-9]+$/i.test(options[0])) return await msg.reply(`Subreddit names need to be alphanumeric!`);
 
     const Channel = await GetChannel(msg.guildId, msg.channelId);
     const subreddit = options[0].replace(/(r\/|\/)/g, "");

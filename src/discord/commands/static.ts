@@ -9,6 +9,7 @@ const HelpMessage = [
     { name: 'remove', command: "i.remove {subredddit}", description: "Remove a subreddit from top of feed", full: "Take the given subreddit and remove it from the channel's subreddit preference"},
     { name: 'settings', command: "i.settings", description: "Open up the settings panel", full: "Open up the panel that shows the channel's settings" },
     { name: 'admin', command: "i.admin add|remove {user|role}", description: "Change administrator access", full: "Either give administrator permissions to a user or a role, or remove them. Administrator permissions allow users to change channel settings, and edit preferences." },
+    { name: 'presets', command: "i.preset", description: "Open up the help menu for adding presets", full: "Open up the help menu presets, which allows you to create, modify, edit, and send custom feeds" },
     { name: 'stats', premium: true, command: "i.stats", description: "Show statistics on the current channel", full: "Show statistics such as number of posts, votes, and ratios between them" },
     { name: 'subreddits', premium: true, command: "i.subreddits {amount}?", description: "List the top subreddits in your preferences", full: "List the top subreddits in the channel preference, as well as the post evaluation score for each. If the amount parameter is omitted, it defaults to 5." },
     { name: 'reactions', premium: true, command: "i.reactions [add {reaction} {score}]?", description: "List the post scoring reactions panel", full: "Open up the reaction panel that allows you to add and remove scoring reactions to posts" }
@@ -73,7 +74,7 @@ export async function SendPremiumMessage(msg: Discord.Message, options: string[]
     embed.setURL("https://www.patreon.com/imgscrpr");
     embed.setThumbnail("https://i.imgur.com/BdjBe41.png");
     embed.setDescription("Premium removes long rate limits and adds many perks. It amplifies your experience greatly, and also supports us in hosting Imgscrpr and creating a better experience for everyone.");
-    embed.addField("Tiny Rate Limit", "Changes the waiting time between posts from 15 seconds to 1 second");
+    embed.addField("Tiny Rate Limit", "Changes the waiting time between posts from 10 seconds to 0.1 seconds");
     embed.addField("Customizable Votes", "Gives the ability to edit the upvote/downvote reactions, as well as adding new ones");
     embed.addField("New Commands", "From statistics to meticulous customizations, premium adds many new commands to improve community experience");
     embed.setFooter("Although buying premium enhances your community's experience as well as supporting us, it isn't necessary, and we will still appreciate you for using Imgscrpr regardless");

@@ -87,6 +87,11 @@ Client.on("guildMemberUpdate", async (prev: Discord.GuildMember, curr: Discord.G
 
     return;
 });
+Client.on("guildMemberAdd", async (user: Discord.GuildMember) => {
+    if(user.guild.id != process.env.SUPPORT_SERVER) return; // Support server id
+
+    await UpdateUser(user.id, PremiumRoles[Object.keys(PremiumRoles).find(a => user.roles.cache.get(a))] || []);
+});
 
 export async function login() {
     await Client.login(process.env.TOKEN);
